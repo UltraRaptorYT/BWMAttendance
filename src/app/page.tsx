@@ -3,7 +3,6 @@
 import { useCallback } from "react";
 import {
   Scanner as ScannerComp,
-  IScannerProps,
   centerText,
   IDetectedBarcode,
 } from "@yudiel/react-qr-scanner";
