@@ -120,3 +120,8 @@
     @apply bg-background text-foreground;
   }
 }
+
+.fullHeight {
+  height: 100dvh;
+  height: 100vh;
+}
