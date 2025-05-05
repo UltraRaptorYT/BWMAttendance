@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback } from "react";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useState, useEffect, useCallback } from "react";
 import {
   Scanner as ScannerComp,
   centerText,
@@ -11,14 +12,44 @@ import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Menu } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function ScannerPage() {
+  const [googleSheetLink, setGoogleSheetLink] = useLocalStorage<string>(
+    "googleSheetLink",
+    ""
+  );
+  const [tempLink, setTempLink] = useState(googleSheetLink);
+  const [sheetName, setSheetName] = useLocalStorage<string>(
+    "googleSheetName",
+    "Sheet1"
+  );
+  const [tempName, setTempName] = useState(sheetName);
+  const [sheetId, setSheetId] = useState<string | null>(null);
+
+  const extractSheetId = (url: string): string | null => {
+    const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    return match ? match[1] : null;
+  };
+
+  useEffect(() => {
+    let extractedId = extractSheetId(googleSheetLink);
+    setSheetId(extractedId);
+    console.log("Extracted Sheet ID:", extractedId);
+  }, [googleSheetLink]);
+
+  const handleSave = () => {
+    setGoogleSheetLink(tempLink);
+    setSheetName(tempName);
+    toast.success("Configuration saved!");
+  };
+
   const handleScan = useCallback((detectedCodes: IDetectedBarcode[]) => {
     console.log("Scanned:", detectedCodes);
     toast.success(`Scanned: ${detectedCodes[0].rawValue}`);
@@ -37,7 +68,14 @@ export default function ScannerPage() {
   return (
     <>
       <div className="flex items-center fullHeight">
-        <Dialog>
+        <Dialog
+          onOpenChange={(open) => {
+            if (open) {
+              setTempLink(googleSheetLink);
+              setTempName(sheetName);
+            }
+          }}
+        >
           <DialogTrigger asChild>
             <Button
               className="fixed top-2.5 left-2.5"
@@ -49,11 +87,40 @@ export default function ScannerPage() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Are you absolutely sure?</DialogTitle>
-              <DialogDescription>
-                This action cannot be undone. This will permanently delete your
-                account and remove your data from our servers.
-              </DialogDescription>
+              <DialogTitle>Configuration</DialogTitle>
+              <div className="grid w-full max-w-sm items-center gap-1.5 mt-3">
+                <Label htmlFor="sheet">Google Sheet Link</Label>
+                <Input
+                  id="sheet"
+                  type="url"
+                  placeholder="Paste your Google Sheet link"
+                  value={tempLink}
+                  onChange={(e) => setTempLink(e.target.value)}
+                />
+              </div>
+              <div className="grid w-full max-w-sm items-center gap-1.5 mt-3">
+                <Label htmlFor="sheetName" className="mt-4">
+                  Sheet Name
+                </Label>
+                <Input
+                  id="sheetName"
+                  type="text"
+                  placeholder="Enter the sheet name (e.g. 'Attendance')"
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
+                />
+              </div>
+              <Button
+                className="mt-2"
+                onClick={handleSave}
+                disabled={
+                  (tempLink === googleSheetLink && tempName === sheetName) ||
+                  tempLink.trim() === "" ||
+                  tempName.trim() === ""
+                }
+              >
+                Save
+              </Button>
             </DialogHeader>
           </DialogContent>
         </Dialog>
