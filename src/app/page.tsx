@@ -5,6 +5,7 @@ import {
   Scanner as ScannerComp,
   IScannerProps,
   centerText,
+  IDetectedBarcode,
 } from "@yudiel/react-qr-scanner";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -19,7 +20,7 @@ import {
 import { Menu } from "lucide-react";
 
 export default function ScannerPage(props: Partial<IScannerProps>) {
-  const handleScan = useCallback((detectedCodes: any) => {
+  const handleScan = useCallback((detectedCodes: IDetectedBarcode[]) => {
     console.log("Scanned:", detectedCodes);
     toast.success(`Scanned: ${detectedCodes[0].rawValue}`);
   }, []);
