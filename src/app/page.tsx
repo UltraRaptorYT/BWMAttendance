@@ -39,7 +39,7 @@ export default function ScannerPage() {
   };
 
   useEffect(() => {
-    let extractedId = extractSheetId(googleSheetLink);
+    const extractedId = extractSheetId(googleSheetLink);
     setSheetId(extractedId);
     console.log("Extracted Sheet ID:", extractedId);
   }, [googleSheetLink]);
@@ -67,7 +67,7 @@ export default function ScannerPage() {
 
   return (
     <>
-      <div className="flex items-center fullHeight">
+      <div className="flex flex-col justify-center items-center fullHeight">
         <Dialog
           onOpenChange={(open) => {
             if (open) {
@@ -124,6 +124,8 @@ export default function ScannerPage() {
             </DialogHeader>
           </DialogContent>
         </Dialog>
+
+        <p>{sheetId}</p>
 
         <div className="w-4/5 mx-auto aspect-square max-w-3xl">
           <ScannerComp
