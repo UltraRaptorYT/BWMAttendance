@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Menu } from "lucide-react";
 
-export default function ScannerPage(props: Partial<IScannerProps>) {
+export default function ScannerPage() {
   const handleScan = useCallback((detectedCodes: IDetectedBarcode[]) => {
     console.log("Scanned:", detectedCodes);
     toast.success(`Scanned: ${detectedCodes[0].rawValue}`);
@@ -61,7 +61,6 @@ export default function ScannerPage(props: Partial<IScannerProps>) {
 
         <div className="w-4/5 mx-auto aspect-square max-w-3xl">
           <ScannerComp
-            {...props}
             formats={[
               "qr_code",
               "micro_qr_code",
