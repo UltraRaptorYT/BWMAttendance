@@ -50,10 +50,47 @@ export default function ScannerPage() {
     toast.success("Configuration saved!");
   };
 
-  const handleScan = useCallback((detectedCodes: IDetectedBarcode[]) => {
-    console.log("Scanned:", detectedCodes);
-    toast.success(`Scanned: ${detectedCodes[0].rawValue}`);
-  }, []);
+  const scanToSheet = async (value: string) => {
+    if (!sheetId || !sheetName) {
+      toast.error("Google Sheet ID or Sheet Name is missing.");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/scan", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          SHEET_ID: sheetId,
+          SHEET_NAME: sheetName,
+          name: value,
+          email: "sohhongyu@gmail.com",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to log scan");
+      }
+
+      toast.success(`Scan ${value} recorded!`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to send scan to Google Sheet.");
+    }
+  };
+
+  const handleScan = useCallback(
+    (detectedCodes: IDetectedBarcode[]) => {
+      const code = detectedCodes[0]?.rawValue;
+      if (!code) return;
+
+      console.log("Scanned:", code);
+      scanToSheet(code);
+    },
+    [sheetId, sheetName]
+  );
 
   const handleError = useCallback((error: unknown) => {
     if (error instanceof Error) {
@@ -162,7 +199,7 @@ export default function ScannerPage() {
               tracker: centerText,
             }}
             allowMultiple={false}
-            scanDelay={2000}
+            scanDelay={0}
           />
         </div>
       </div>
