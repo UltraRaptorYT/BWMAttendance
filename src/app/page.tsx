@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback } from "react";
 import {
   Scanner as ScannerComp,
@@ -5,7 +7,6 @@ import {
   centerText,
 } from "@yudiel/react-qr-scanner";
 import { Button } from "@/components/ui/button";
-import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -37,7 +38,7 @@ export default function ScannerPage(props: Partial<IScannerProps>) {
     <>
       <div className="flex items-center fullHeight">
         <Dialog>
-          <DialogTrigger>
+          <DialogTrigger asChild>
             <Button
               className="fixed top-2.5 left-2.5"
               size={"icon"}
@@ -97,7 +98,6 @@ export default function ScannerPage(props: Partial<IScannerProps>) {
           />
         </div>
       </div>
-      <Toaster richColors />
     </>
   );
 }
