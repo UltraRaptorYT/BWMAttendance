@@ -5,7 +5,6 @@ import { google } from "googleapis";
 export async function GET() {
   return NextResponse.json({
     message: "Scan API working perfectly!",
-    email: process.env.GOOGLE_SERVICE_EMAIL,
   });
 }
 
