@@ -28,14 +28,14 @@ export default function ScannerPage() {
   const [tempLink, setTempLink] = useState(googleSheetLink);
   const [sheetName, setSheetName] = useLocalStorage<string>(
     "googleSheetName",
-    "Sheet1"
+    ""
   );
   const [tempName, setTempName] = useState(sheetName);
-  const [sheetId, setSheetId] = useState<string | null>(null);
+  const [sheetId, setSheetId] = useState<string>("");
 
-  const extractSheetId = (url: string): string | null => {
+  const extractSheetId = (url: string): string => {
     const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-    return match ? match[1] : null;
+    return match ? match[1] : "";
   };
 
   useEffect(() => {
@@ -51,11 +51,6 @@ export default function ScannerPage() {
   };
 
   const scanToSheet = async (value: string) => {
-    if (!sheetId || !sheetName) {
-      toast.error("Google Sheet ID or Sheet Name is missing.");
-      return;
-    }
-
     try {
       const response = await fetch("/api/scan", {
         method: "POST",
@@ -65,16 +60,21 @@ export default function ScannerPage() {
         body: JSON.stringify({
           SHEET_ID: sheetId,
           SHEET_NAME: sheetName,
-          name: value,
-          email: "sohhongyu@gmail.com",
+          phone_number: value,
         }),
       });
+
+      const result = await response.json();
 
       if (!response.ok) {
         throw new Error("Failed to log scan");
       }
 
-      toast.success(`Scan ${value} recorded!`);
+      if (result.success === false && result.reason === "duplicate") {
+        toast.warning(`⚠️ Already scanned: ${value}`);
+      } else {
+        toast.success(`✅ Scan ${value} recorded!`);
+      }
     } catch (err) {
       console.error(err);
       toast.error("Failed to send scan to Google Sheet.");

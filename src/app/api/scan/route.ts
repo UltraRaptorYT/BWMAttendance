@@ -1,4 +1,3 @@
-// src/app/api/scan/route.ts
 import { NextResponse } from "next/server";
 import { google } from "googleapis";
 
@@ -9,7 +8,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { name, email, SHEET_ID, SHEET_NAME } = await request.json();
+  let { phone_number, SHEET_ID, SHEET_NAME } = await request.json();
+
+  if (!SHEET_ID) SHEET_ID = process.env.SHEET_ID;
+  if (!SHEET_NAME) SHEET_NAME = process.env.ATTENDANCE_SHEET_NAME;
 
   const auth = new google.auth.GoogleAuth({
     credentials: {
@@ -22,32 +24,36 @@ export async function POST(request: Request) {
   const sheets = google.sheets({ version: "v4", auth });
 
   try {
-    const rowsRes = await sheets.spreadsheets.values.get({
+    // Step 1: Read column C to check for duplicates
+    const readRes = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEET_ID,
-      range: `${SHEET_NAME}!A2:D`,
+      range: `${SHEET_NAME}!C:C`,
     });
 
-    const rows = rowsRes.data.values || [];
-    const isRegistered = rows.some((row) => row[1] === email);
+    const existingNumbers = (readRes.data.values || [])
+      .flat()
+      .map((v) => v.trim());
 
+    if (existingNumbers.includes(phone_number.trim())) {
+      return NextResponse.json({ success: false, reason: "duplicate" });
+    }
+
+    // Step 2: Append data
+    const timestamp = new Date().toISOString();
     await sheets.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
       range: `${SHEET_NAME}!A:D`,
       valueInputOption: "USER_ENTERED",
       requestBody: {
-        values: [
-          [name, email, new Date().toISOString(), isRegistered ? "Yes" : "No"],
-        ],
+        values: [[timestamp, "", phone_number, true]],
       },
     });
 
-    return NextResponse.json({
-      message: isRegistered ? "Already registered" : "New registration",
-    });
+    return NextResponse.json({ success: true });
   } catch (err) {
-    console.error(err);
+    console.error("Error appending to Google Sheet:", err);
     return NextResponse.json(
-      { error: "Failed to write to sheet" },
+      { error: "Failed to write to Google Sheet" },
       { status: 500 }
     );
   }
