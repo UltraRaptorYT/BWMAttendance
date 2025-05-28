@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "BWM Attendance",
-  description: "BW Monastery",
+  description: "BW Monastery Attendance",
 };
 
 export default function RootLayout({
@@ -29,7 +29,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
-        <Toaster richColors position="top-center"/>
+        <Toaster richColors position="top-center" />
       </body>
     </html>
   );
