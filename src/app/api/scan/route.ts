@@ -8,10 +8,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  let { phone_number, SHEET_ID, SHEET_NAME } = await request.json();
-
-  if (!SHEET_ID) SHEET_ID = process.env.SHEET_ID;
-  if (!SHEET_NAME) SHEET_NAME = process.env.ATTENDANCE_SHEET_NAME;
+  const body = await request.json();
+  const phone_number = body.phone_number;
+  let SHEET_ID = body.SHEET_ID || process.env.SHEET_ID;
+  let SHEET_NAME = body.SHEET_NAME || process.env.ATTENDANCE_SHEET_NAME;
 
   const auth = new google.auth.GoogleAuth({
     credentials: {
