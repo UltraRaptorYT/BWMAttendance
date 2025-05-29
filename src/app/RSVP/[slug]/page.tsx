@@ -6,23 +6,37 @@ import { useEffect, useState } from "react";
 export default function RSVPPage() {
   const { slug } = useParams();
   const [response, setResponse] = useState<string | null>(null);
+  const [name, setName] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    const fetchRSVP = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch(`/api/RSVP?phone=${slug}`);
-        const data = await res.json();
-        setResponse(data.rsvp || null);
+        const [userRes, rsvpRes] = await Promise.all([
+          fetch(`/api/user?phone=${slug}`),
+          fetch(`/api/RSVP?phone=${slug}`),
+        ]);
+
+        if (userRes.status === 404) {
+          setNotFound(true);
+          return;
+        }
+
+        const userData = await userRes.json();
+        const rsvpData = await rsvpRes.json();
+
+        setName(userData.name || null);
+        setResponse(rsvpData.rsvp || null);
       } catch (err) {
-        console.error("Failed to fetch RSVP:", err);
+        console.error("Failed to fetch user/RSVP:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    if (slug) fetchRSVP();
+    if (slug) fetchData();
   }, [slug]);
 
   const handleResponse = async (ans: "yes" | "no") => {
@@ -44,13 +58,27 @@ export default function RSVPPage() {
     }
   };
 
-  if (!slug || loading) return <div>Loading...</div>;
+  if (!slug || loading)
+    return (
+      <div className="text-center text-xl flex items-center justify-center min-h-[100dvh]">
+        Loading...
+      </div>
+    );
+  if (notFound)
+    return (
+      <div className="text-center text-xl flex items-center justify-center min-h-[100dvh]">
+        ❌ User not found.
+      </div>
+    );
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
+    <main className="flex flex-col items-center justify-center min-h-[100dvh] p-6 text-center">
       <h1 className="text-2xl font-bold mb-4">Event RSVP</h1>
+      <p className="text-lg mb-1">
+        👤 Name: <strong>{name}</strong>
+      </p>
       <p className="text-lg mb-4">
-        Phone Number: <strong>{slug}</strong>
+        📞 Phone: <strong>{slug}</strong>
       </p>
 
       {!response && !isEditing && (
