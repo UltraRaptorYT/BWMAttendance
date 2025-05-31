@@ -19,7 +19,6 @@ import {
 import { Menu } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
 
 export default function ScannerPage() {
   const [googleSheetLink, setGoogleSheetLink] = useLocalStorage<string>(
@@ -75,48 +74,48 @@ export default function ScannerPage() {
     }
   };
 
-  const scanToSheet = async (value: string) => {
-    if (isProcessing) return;
-    setIsProcessing(true);
+  const scanToSheet = useCallback(
+    async (value: string) => {
+      if (isProcessing) return;
+      setIsProcessing(true);
 
-    try {
-      const userData = await getUserData(value);
+      try {
+        const userData = await getUserData(value);
 
-      if (!userData) {
-        throw new Error("Failed to getUserData");
+        if (!userData) {
+          throw new Error("Failed to getUserData");
+        }
+
+        const response = await fetch("/api/scan", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            SHEET_ID: sheetId,
+            SHEET_NAME: sheetName,
+            phone_number: value,
+          }),
+        });
+
+        const result = await response.json();
+        console.log(result);
+
+        if (!response.ok || !result.success) {
+          throw new Error("Scan failed");
+        }
+
+        toast.success(`✅ Scan ${value} recorded!`);
+        setScannedUser(userData);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to send scan to Google Sheet.");
+      } finally {
+        setIsProcessing(false);
       }
-
-      // Proceed only if not scanned
-      const response = await fetch("/api/scan", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          SHEET_ID: sheetId,
-          SHEET_NAME: sheetName,
-          phone_number: value,
-        }),
-      });
-
-      const result = await response.json();
-      console.log(result);
-
-      if (!response.ok || !result.success) {
-        throw new Error("Scan failed");
-      }
-
-      toast.success(`✅ Scan ${value} recorded!`);
-
-      // Show user info
-      setScannedUser(userData);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to send scan to Google Sheet.");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+    },
+    [sheetId, sheetName, isProcessing]
+  );
 
   const handleScan = useCallback(
     (detectedCodes: IDetectedBarcode[]) => {
