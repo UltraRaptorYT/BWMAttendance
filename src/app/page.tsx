@@ -101,11 +101,16 @@ export default function ScannerPage() {
         const result = await response.json();
         console.log(result);
 
-        if (!response.ok || !result.success) {
-          throw new Error("Scan failed");
+        if (!response.ok) {
+          throw new Error("Failed to log scan");
         }
 
-        toast.success(`✅ Scan ${value} recorded!`);
+        if (result.success === false && result.reason === "duplicate") {
+          toast.warning(`⚠️ Already scanned: ${value}`);
+        } else {
+          toast.success(`✅ Scan ${value} recorded!`);
+        }
+
         setScannedUser(userData);
       } catch (err) {
         console.error(err);
@@ -139,7 +144,7 @@ export default function ScannerPage() {
 
   useEffect(() => {
     if (scannedUser) {
-      const timeout = setTimeout(() => setScannedUser(null), 8000);
+      const timeout = setTimeout(() => setScannedUser(null), 10000);
       return () => clearTimeout(timeout);
     }
   }, [scannedUser]);
