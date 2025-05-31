@@ -39,7 +39,7 @@ export default function ScannerPage() {
     zone: string;
     color: string;
   }>(null);
-  const [isProcessing, setIsProcessing] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const extractSheetId = (url: string): string => {
     const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
