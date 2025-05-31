@@ -19,6 +19,7 @@ import {
 import { Menu } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 export default function ScannerPage() {
   const [googleSheetLink, setGoogleSheetLink] = useLocalStorage<string>(
@@ -32,6 +33,14 @@ export default function ScannerPage() {
   );
   const [tempName, setTempName] = useState(sheetName);
   const [sheetId, setSheetId] = useState<string>("");
+  const [scannedUser, setScannedUser] = useState<null | {
+    name: string;
+    phone: string;
+    venue: string;
+    zone: string;
+    color: string;
+  }>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const extractSheetId = (url: string): string => {
     const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
@@ -50,8 +59,34 @@ export default function ScannerPage() {
     toast.success("Configuration saved!");
   };
 
-  const scanToSheet = async (value: string) => {
+  const getUserData = async (value: string) => {
     try {
+      const response = await fetch(`/api/user?phone=${value}`);
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error("Failed to getUserData");
+      }
+      return result;
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to getUserData from Google Sheet.");
+      return null;
+    }
+  };
+
+  const scanToSheet = async (value: string) => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+
+    try {
+      const userData = await getUserData(value);
+
+      if (!userData) {
+        throw new Error("Failed to getUserData");
+      }
+
+      // Proceed only if not scanned
       const response = await fetch("/api/scan", {
         method: "POST",
         headers: {
@@ -65,19 +100,21 @@ export default function ScannerPage() {
       });
 
       const result = await response.json();
+      console.log(result);
 
-      if (!response.ok) {
-        throw new Error("Failed to log scan");
+      if (!response.ok || !result.success) {
+        throw new Error("Scan failed");
       }
 
-      if (result.success === false && result.reason === "duplicate") {
-        toast.warning(`⚠️ Already scanned: ${value}`);
-      } else {
-        toast.success(`✅ Scan ${value} recorded!`);
-      }
+      toast.success(`✅ Scan ${value} recorded!`);
+
+      // Show user info
+      setScannedUser(userData);
     } catch (err) {
       console.error(err);
       toast.error("Failed to send scan to Google Sheet.");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -85,7 +122,6 @@ export default function ScannerPage() {
     (detectedCodes: IDetectedBarcode[]) => {
       const code = detectedCodes[0]?.rawValue;
       if (!code) return;
-
       console.log("Scanned:", code);
       scanToSheet(code);
     },
@@ -101,6 +137,19 @@ export default function ScannerPage() {
       toast.error(`Unknown scanner error:: ${error}`);
     }
   }, []);
+
+  useEffect(() => {
+    if (scannedUser) {
+      const timeout = setTimeout(() => setScannedUser(null), 8000);
+      return () => clearTimeout(timeout);
+    }
+  }, [scannedUser]);
+
+  const colorValue: Record<"Yellow" | "Purple" | "Red", string> = {
+    Yellow: "FFBF00",
+    Purple: "A020F0",
+    Red: "FF0000",
+  };
 
   return (
     <>
@@ -162,8 +211,6 @@ export default function ScannerPage() {
           </DialogContent>
         </Dialog>
 
-        <p>{sheetId}</p>
-
         <div className="w-4/5 mx-auto aspect-square max-w-3xl">
           <ScannerComp
             formats={[
@@ -201,6 +248,45 @@ export default function ScannerPage() {
             allowMultiple={false}
             scanDelay={0}
           />
+        </div>
+        {isProcessing && (
+          <div className="absolute top-16 text-sm text-gray-500 animate-pulse">
+            ⏳ Processing scan...
+          </div>
+        )}
+
+        <div className="p-5 w-full">
+          <div className="bg-white shadow-md rounded-lg p-4 w-full max-w-md text-lg">
+            <h3 className="font-bold text-xl mb-2">User Info</h3>
+            <p>
+              <strong>Name:</strong> {scannedUser?.name || ""}
+            </p>
+            <p>
+              <strong>Phone:</strong> {scannedUser?.phone || ""}
+            </p>
+            <p>
+              <strong>Venue:</strong> {scannedUser?.venue || ""}
+            </p>
+            <p>
+              <strong>Zone:</strong> {scannedUser?.zone || ""}
+            </p>
+            <p>
+              <strong>Color:</strong>{" "}
+              <span
+                className="font-bold"
+                style={{
+                  color: `#${
+                    colorValue[
+                      (scannedUser?.color as keyof typeof colorValue) ||
+                        "ff0000"
+                    ]
+                  }`,
+                }}
+              >
+                {scannedUser?.color || ""}
+              </span>
+            </p>
+          </div>
         </div>
       </div>
     </>

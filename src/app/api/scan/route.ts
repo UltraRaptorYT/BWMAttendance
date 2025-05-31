@@ -24,21 +24,31 @@ export async function POST(request: Request) {
   const sheets = google.sheets({ version: "v4", auth });
 
   try {
-    // Step 1: Read column C to check for duplicates
+    // Step 1: Read the full sheet to get rows and find duplicates
     const readRes = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEET_ID,
-      range: `${SHEET_NAME}!C:C`,
+      range: `${SHEET_NAME}!A:D`, // full rows if A:D contains data
     });
 
-    const existingNumbers = (readRes.data.values || [])
-      .flat()
-      .map((v) => v.trim());
+    const rows = readRes.data.values || [];
+    const existingRow = rows.find(
+      (row) => row[2]?.trim() === phone_number.trim()
+    ); // column C
 
-    if (existingNumbers.includes(phone_number.trim())) {
-      return NextResponse.json({ success: false, reason: "duplicate" });
+    if (existingRow) {
+      return NextResponse.json({
+        success: false,
+        reason: "duplicate",
+        user: {
+          timestamp: existingRow[0] || null,
+          name: existingRow[1] || null,
+          phone: existingRow[2] || null,
+          attended: existingRow[3] || null,
+        },
+      });
     }
 
-    // Step 2: Append data
+    // Step 2: Append new attendance
     const timestamp = new Date().toISOString();
     await sheets.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
@@ -58,3 +68,4 @@ export async function POST(request: Request) {
     );
   }
 }
+
