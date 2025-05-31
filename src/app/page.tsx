@@ -152,7 +152,7 @@ export default function ScannerPage() {
 
   return (
     <>
-      <div className="flex flex-col justify-center items-center fullHeight">
+      <div className="flex flex-col md:flex-row justify-center items-center fullHeight">
         <Dialog
           onOpenChange={(open) => {
             if (open) {
@@ -248,13 +248,13 @@ export default function ScannerPage() {
             scanDelay={0}
           />
         </div>
-        {isProcessing && (
-          <div className="absolute top-16 text-sm text-gray-500 animate-pulse">
-            ⏳ Processing scan...
-          </div>
-        )}
 
-        <div className="p-5 w-full">
+        <div className="p-5 w-full md:w-2/5">
+          {isProcessing && (
+            <div className="absolute top-16 text-sm md:relative md:top-0 text-center text-gray-500 animate-pulse">
+              ⏳ Processing scan...
+            </div>
+          )}
           <div className="bg-white shadow-md rounded-lg p-4 w-full max-w-md text-lg">
             <h3 className="font-bold text-xl mb-2">User Info</h3>
             <p>
