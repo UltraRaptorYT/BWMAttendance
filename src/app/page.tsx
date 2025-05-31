@@ -39,7 +39,7 @@ export default function ScannerPage() {
     zone: string;
     color: string;
   }>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(true);
 
   const extractSheetId = (url: string): string => {
     const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
@@ -256,7 +256,7 @@ export default function ScannerPage() {
 
         <div className="p-5 w-full md:w-2/5">
           {isProcessing && (
-            <div className="absolute top-16 text-sm md:relative md:top-0 text-center text-gray-500 animate-pulse">
+            <div className="absolute top-16 -translate-x-1/2 left-1/2 md:left-0 md:translate-none text-sm max-w-md md:relative md:top-0 text-center text-gray-500 animate-pulse">
               ⏳ Processing scan...
             </div>
           )}
