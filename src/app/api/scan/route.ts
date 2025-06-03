@@ -49,7 +49,9 @@ export async function POST(request: Request) {
     }
 
     // Step 2: Append new attendance
-    const timestamp = new Date().toISOString();
+    const timestamp = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Singapore",
+    });
     await sheets.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
       range: `${SHEET_NAME}!A:D`,

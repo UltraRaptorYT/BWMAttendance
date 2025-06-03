@@ -77,7 +77,9 @@ export async function POST(request: Request) {
       });
     } else {
       // New entry with timestamp + phone + RSVP
-      const timestamp = new Date().toISOString();
+      const timestamp = new Date().toLocaleString("en-US", {
+        timeZone: "Asia/Singapore",
+      });
       await sheets.spreadsheets.values.append({
         spreadsheetId: SHEET_ID,
         range: `${SHEET_NAME}!A:D`,
