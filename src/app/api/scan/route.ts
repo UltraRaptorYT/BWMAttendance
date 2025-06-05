@@ -7,22 +7,21 @@ export async function GET() {
   });
 }
 
+const auth = new google.auth.GoogleAuth({
+  credentials: {
+    client_email: process.env.GOOGLE_SERVICE_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+  },
+  scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+});
+
+const sheets = google.sheets({ version: "v4", auth });
+
 export async function POST(request: Request) {
   const body = await request.json();
   const phone_number = body.phone_number;
   const SHEET_ID = body.SHEET_ID || process.env.SHEET_ID;
   const SHEET_NAME = body.SHEET_NAME || process.env.ATTENDANCE_SHEET_NAME;
-
-  const auth = new google.auth.GoogleAuth({
-    credentials: {
-      client_email: process.env.GOOGLE_SERVICE_EMAIL,
-      private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    },
-    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-  });
-
-  const sheets = google.sheets({ version: "v4", auth });
-
   try {
     // Step 1: Read the full sheet to get rows and find duplicates
     const readRes = await sheets.spreadsheets.values.get({
