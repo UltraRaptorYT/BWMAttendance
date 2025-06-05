@@ -81,41 +81,34 @@ export default function ScannerPage() {
       setIsProcessing(true);
 
       try {
-        const userData = await getUserData(value);
-
-        if (!userData) {
-          throw new Error("Failed to getUserData");
-        }
-
-        const response = await fetch("/api/scan", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            SHEET_ID: sheetId,
-            SHEET_NAME: sheetName,
-            phone_number: value,
+        const [userRes, scanRes] = await Promise.all([
+          getUserData(value),
+          fetch("/api/scan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              SHEET_ID: sheetId,
+              SHEET_NAME: sheetName,
+              phone_number: value,
+            }),
           }),
-        });
+        ]);
 
-        const result = await response.json();
-        console.log(result);
+        const result = await scanRes.json();
 
-        if (!response.ok) {
-          throw new Error("Failed to log scan");
-        }
+        if (!userRes) throw new Error("User not found");
+        if (!scanRes.ok) throw new Error("Scan API failed");
+
+        setScannedUser(userRes);
 
         if (result.success === false && result.reason === "duplicate") {
           toast.warning(`⚠️ Already scanned: ${value}`);
         } else {
           toast.success(`✅ Scan ${value} recorded!`);
         }
-
-        setScannedUser(userData);
       } catch (err) {
         console.error(err);
-        toast.error("Failed to send scan to Google Sheet.");
+        toast.error("Scan failed.");
       } finally {
         setIsProcessing(false);
       }
@@ -257,7 +250,7 @@ export default function ScannerPage() {
 
         <div className="p-5 w-full md:w-2/5">
           {isProcessing && (
-            <div className="absolute top-16 -translate-x-1/2 left-1/2 md:left-0 md:translate-none text-sm max-w-md md:relative md:top-0 text-center text-gray-500 animate-pulse">
+            <div className="absolute top-12 -translate-x-1/2 left-1/2 md:left-0 md:translate-none text-sm max-w-md md:relative md:top-0 text-center text-gray-500 animate-pulse">
               ⏳ Processing scan...
             </div>
           )}
