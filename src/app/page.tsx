@@ -33,6 +33,7 @@ export default function ScannerPage() {
   const [tempName, setTempName] = useState(sheetName);
   const [sheetId, setSheetId] = useState<string>("");
   const [scannedUser, setScannedUser] = useState<null | {
+    refNo: string;
     name: string;
     phone: string;
     venue: string;
@@ -262,6 +263,9 @@ export default function ScannerPage() {
           )}
           <div className="bg-white shadow-md rounded-lg p-4 w-full max-w-md text-lg">
             <h3 className="font-bold text-xl mb-2">User Info</h3>
+            <p>
+              <strong>Ref No:</strong> {scannedUser?.refNo || ""}
+            </p>
             <p>
               <strong>Name:</strong> {scannedUser?.name || ""}
             </p>

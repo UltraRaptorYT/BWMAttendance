@@ -28,24 +28,26 @@ export async function GET(request: Request) {
   try {
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEET_ID,
-      range: `${SHEET_NAME}!B2:H`, // Check Contact Number & Name
+      range: `${SHEET_NAME}!A2:I`, // Check Contact Number & Name
     });
 
     const rows = res.data.values || [];
 
-    const match = rows.find((row) => row[3]?.trim() === phone.trim()); // Column E is index 3 (0-based)
+    const match = rows.find((row) => row[4]?.trim() === phone.trim()); // Column E is index 3 (0-based)
 
-    if (!match || !match[0]) {
+    if (!match || !match[1]) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const name = match[0];
-    const matchedPhone = match[3];
-    const venue = match[4];
-    const zone = match[5];
-    const color = match[6];
+    const refNo = match[0];
+    const name = match[1];
+    const matchedPhone = match[4];
+    const venue = match[6];
+    const zone = match[7];
+    const color = match[8];
 
     return NextResponse.json({
+      refNo,
       name,
       phone: matchedPhone,
       venue,
