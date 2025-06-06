@@ -41,6 +41,7 @@ export default function ScannerPage() {
     color: string;
   }>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [userData, setUserData] = useState<UserData[] | null>(null);
 
   const extractSheetId = (url: string): string => {
     const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
@@ -59,21 +60,68 @@ export default function ScannerPage() {
     toast.success("Configuration saved!");
   };
 
-  const getUserData = async (value: string) => {
-    try {
-      const response = await fetch(`/api/user?phone=${value}`);
+  type UserData = {
+    "Ref No": string;
+    Name: string;
+    Contact: string;
+    Venue: string;
+    Zone: string;
+    Colour: "Red" | "Purple" | "Yellow";
+  };
 
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error("Failed to getUserData");
+  useEffect(() => {
+    const fetchOnce = async () => {
+      try {
+        const res = await fetch("/output.json");
+        if (!res.ok) throw new Error("Failed to fetch user data");
+        const data = await res.json();
+        setUserData(data);
+      } catch (err) {
+        console.error("Prefetch error:", err);
+        toast.error("⚠️ Failed to preload user data.");
       }
-      return result;
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to getUserData from Google Sheet.");
+    };
+
+    fetchOnce();
+  }, []);
+
+  const getUserData = async (value: string) => {
+    if (!userData) {
+      toast.error("User data not loaded yet.");
       return null;
     }
+
+    const match = userData.find(
+      (user) => user.Contact?.trim() === value.trim()
+    );
+
+    if (!match) return null;
+
+    return {
+      refNo: match["Ref No"],
+      name: match.Name,
+      phone: match.Contact,
+      venue: match.Venue,
+      zone: match.Zone,
+      color: match.Colour,
+    };
   };
+
+  // const getUserData = async (value: string) => {
+  //   try {
+  //     const response = await fetch(`/api/user?phone=${value}`);
+
+  //     const result = await response.json();
+  //     if (!response.ok) {
+  //       throw new Error("Failed to getUserData");
+  //     }
+  //     return result;
+  //   } catch (err) {
+  //     console.error(err);
+  //     toast.error("Failed to getUserData from Google Sheet.");
+  //     return null;
+  //   }
+  // };
 
   const scanToSheet = useCallback(
     async (value: string) => {
