@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Scanner as ScannerComp,
   centerText,
@@ -16,11 +16,23 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Menu } from "lucide-react";
+import { Menu, Phone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import userDataJson from "@/data/users.json";
 
 export default function ScannerPage() {
+  const phoneMap = useRef<Map<string, (typeof userDataJson)[0]>>(new Map());
+
+  useEffect(() => {
+    console.log("HI");
+    const map = new Map();
+    for (const entry of userDataJson) {
+      map.set(entry.Contact, entry); // Adjust key name accordingly
+    }
+    phoneMap.current = map;
+  }, []);
+
   const [googleSheetLink, setGoogleSheetLink] = useLocalStorage<string>(
     "googleSheetLink",
     ""
@@ -59,18 +71,27 @@ export default function ScannerPage() {
     toast.success("Configuration saved!");
   };
 
-  const getUserData = async (value: string) => {
-    try {
-      const response = await fetch(`/api/user?phone=${value}`);
+  const getUserData = async (phone: string) => {
+    const localUser = phoneMap.current.get(phone);
+    console.log(phone);
+    if (localUser) {
+      return {
+        refNo: localUser["Ref No"] || "",
+        name: localUser["Name"] || "",
+        phone: phone,
+        venue: localUser["Venue"] || "",
+        zone: localUser["Zone"] || "",
+        color: localUser["Colour"] || "Red", // using 'Colour' as per your JSON
+      };
+    }
 
+    try {
+      const response = await fetch(`/api/user?phone=${phone}`);
       const result = await response.json();
-      if (!response.ok) {
-        throw new Error("Failed to getUserData");
-      }
+      if (!response.ok) throw new Error("API error");
       return result;
     } catch (err) {
-      console.error(err);
-      toast.error("Failed to getUserData from Google Sheet.");
+      toast.error("User not found locally or via API.");
       return null;
     }
   };
