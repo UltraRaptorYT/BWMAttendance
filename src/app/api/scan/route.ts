@@ -53,10 +53,10 @@ export async function POST(request: Request) {
     });
     await sheets.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
-      range: `${SHEET_NAME}!A:D`,
+      range: `${SHEET_NAME}!A:E`,
       valueInputOption: "USER_ENTERED",
       requestBody: {
-        values: [[timestamp, "", phone_number, true]],
+        values: [[timestamp, "", "", phone_number, true]],
       },
     });
 
