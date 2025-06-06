@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Menu, Phone } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import userDataJson from "@/data/users.json";
@@ -91,6 +91,7 @@ export default function ScannerPage() {
       if (!response.ok) throw new Error("API error");
       return result;
     } catch (err) {
+      console.error(err);
       toast.error("User not found locally or via API.");
       return null;
     }
