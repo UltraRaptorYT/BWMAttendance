@@ -66,7 +66,7 @@ export default function ScannerPage() {
     Contact: string;
     Venue: string;
     Zone: string;
-    Colour: "Red" | "Purple" | "Yellow";
+    Colour: "Red" | "Purple" | "Yellow" | "Pink";
   };
 
   useEffect(() => {
@@ -76,6 +76,7 @@ export default function ScannerPage() {
         if (!res.ok) throw new Error("Failed to fetch user data");
         const data = await res.json();
         setUserData(data);
+        console.log(data);
       } catch (err) {
         console.error("Prefetch error:", err);
         toast.error("⚠️ Failed to preload user data.");
