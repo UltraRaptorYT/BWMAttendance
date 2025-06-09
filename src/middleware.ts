@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
 
 export function middleware(req: NextRequest) {
-  const auth = req.cookies.get("auth");
-  const url = req.nextUrl;
+  const token = req.cookies.get("auth_token")?.value;
 
-  if (url.pathname.startsWith("/admin")) {
-    if (auth?.value === "1") {
+  try {
+    if (token) {
+      jwt.verify(token, process.env.JWT_SECRET!); // throws if invalid/expired
       return NextResponse.next();
     }
-
-    const loginUrl = new URL("/login", req.url);
-    loginUrl.searchParams.set("redirect", url.pathname);
-    return NextResponse.redirect(loginUrl);
+  } catch (err) {
+    console.warn("JWT verification failed:", err);
   }
 
-  return NextResponse.next();
+  const loginUrl = new URL("/login", req.url);
+  loginUrl.searchParams.set("redirect", req.nextUrl.pathname);
+  return NextResponse.redirect(loginUrl);
 }
 
 export const config = {
