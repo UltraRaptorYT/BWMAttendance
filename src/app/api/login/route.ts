@@ -1,21 +1,26 @@
 import { NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
 
 export async function POST(req: Request) {
   const { password } = await req.json();
 
-  if (password === process.env.ACCESS_PASSWORD) {
-    const res = NextResponse.json({ success: true });
-
-    res.cookies.set("auth", "1", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/",
-      maxAge: 60 * 60 * 24, // 1 day
-    });
-
-    return res;
+  if (password !== process.env.ACCESS_PASSWORD) {
+    return NextResponse.json({ success: false }, { status: 401 });
   }
 
-  return NextResponse.json({ success: false }, { status: 401 });
+  const token = jwt.sign({ role: "admin" }, process.env.JWT_SECRET!, {
+    expiresIn: "1d",
+  });
+
+  const res = NextResponse.json({ success: true });
+
+  res.cookies.set("auth_token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 60 * 60 * 24,
+    path: "/",
+  });
+
+  return res;
 }
