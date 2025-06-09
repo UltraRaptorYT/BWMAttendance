@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
+import { SignJWT } from "jose";
+
+const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
 export async function POST(req: Request) {
   const { password } = await req.json();
@@ -8,9 +10,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false }, { status: 401 });
   }
 
-  const token = jwt.sign({ role: "admin" }, process.env.JWT_SECRET!, {
-    expiresIn: "1d",
-  });
+  const token = await new SignJWT({ role: "admin" })
+    .setProtectedHeader({ alg: "HS256" })
+    .setExpirationTime("1d")
+    .sign(secret);
 
   const res = NextResponse.json({ success: true });
 
