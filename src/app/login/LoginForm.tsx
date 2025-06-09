@@ -2,6 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export default function LoginForm() {
   const [password, setPassword] = useState("");
@@ -31,12 +32,9 @@ export default function LoginForm() {
       <div className="bg-white p-6 rounded shadow-md w-full max-w-sm">
         <h1 className="text-xl font-semibold mb-4">Enter Password</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="password"
+          <PasswordInput
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-            className="border border-gray-300 p-2 w-full rounded"
           />
           <button
             type="submit"
