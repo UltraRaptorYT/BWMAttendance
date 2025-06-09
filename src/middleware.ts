@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
+import { jwtVerify } from "jose";
 
-export function middleware(req: NextRequest) {
+const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+
+export async function middleware(req: NextRequest) {
   const token = req.cookies.get("auth_token")?.value;
 
-  try {
-    if (token) {
-      jwt.verify(token, process.env.JWT_SECRET!); // throws if invalid/expired
+  if (token) {
+    try {
+      await jwtVerify(token, secret);
       return NextResponse.next();
+    } catch (err) {
+      console.warn("JWT verification failed:", err);
     }
-  } catch (err) {
-    console.warn("JWT verification failed:", err);
   }
 
   const loginUrl = new URL("/login", req.url);
