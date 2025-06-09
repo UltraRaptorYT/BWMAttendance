@@ -4,9 +4,10 @@ export function middleware(req: NextRequest) {
   const auth = req.cookies.get("auth");
   const url = req.nextUrl;
 
-  // Only protect /admin
   if (url.pathname.startsWith("/admin")) {
-    if (auth?.value === "1") return NextResponse.next();
+    if (auth?.value === "1") {
+      return NextResponse.next();
+    }
 
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("redirect", url.pathname);
