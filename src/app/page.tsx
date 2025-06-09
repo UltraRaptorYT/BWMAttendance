@@ -230,7 +230,6 @@ export default function ScannerPage() {
             </DialogHeader>
           </DialogContent>
         </Dialog>
-
         <div className="w-4/5 mx-auto aspect-square max-w-3xl">
           <ScannerComp
             formats={[
