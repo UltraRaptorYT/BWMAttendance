@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server";
 import { google } from "googleapis";
 
-export async function GET() {
-  return NextResponse.json({
-    message: "Scan API working perfectly!",
-  });
-}
-
 const auth = new google.auth.GoogleAuth({
   credentials: {
     client_email: process.env.GOOGLE_SERVICE_EMAIL,
@@ -16,6 +10,66 @@ const auth = new google.auth.GoogleAuth({
 });
 
 const sheets = google.sheets({ version: "v4", auth });
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const action = searchParams.get("action");
+
+  if (action === "ping") {
+    return await pingGoogleSheets();
+  }
+
+  return NextResponse.json({
+    message: "Scan API working perfectly!",
+  });
+}
+
+async function pingGoogleSheets() {
+  const SHEET_ID = process.env.SHEET_ID;
+  const SHEET_NAME = process.env.ATTENDANCE_SHEET_NAME;
+
+  if (!SHEET_ID || !SHEET_NAME) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Missing SHEET_ID or SHEET_NAME environment variables",
+      },
+      { status: 500 }
+    );
+  }
+
+  try {
+    const startTime = Date.now();
+
+    // Simple read operation to test connectivity and latency
+    await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: `${SHEET_NAME}!A1:A1`, // Just read one cell
+    });
+
+    const endTime = Date.now();
+    const latency = endTime - startTime;
+
+    return NextResponse.json({
+      success: true,
+      latency_ms: latency,
+      status: latency < 1000 ? "good" : latency < 3000 ? "moderate" : "slow",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Ping failed:", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to ping Google Sheets API",
+        details: error instanceof Error ? error.message : "Unknown error",
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(request: Request) {
   const body = await request.json();
