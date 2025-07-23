@@ -3,8 +3,10 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { PasswordInput } from "@/components/PasswordInput";
+import { Button } from "@/components/ui/button";
 
 export default function LoginForm() {
+  const [isProcessing, setIsProcessing] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
@@ -12,6 +14,7 @@ export default function LoginForm() {
   const redirectPath = searchParams.get("redirect") || "/admin";
 
   async function handleSubmit(e: React.FormEvent) {
+    setIsProcessing(true);
     e.preventDefault();
 
     const res = await fetch("/api/login", {
@@ -20,6 +23,7 @@ export default function LoginForm() {
       headers: { "Content-Type": "application/json" },
     });
 
+    setIsProcessing(false);
     if (res.ok) {
       router.push(redirectPath);
     } else {
@@ -28,7 +32,7 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="fullHeight p-4 flex items-center justify-center">
       <div className="bg-white p-6 rounded shadow-md w-full max-w-sm">
         <h1 className="text-xl font-semibold mb-4">Enter Password</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -36,12 +40,9 @@ export default function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded"
-          >
-            Submit
-          </button>
+          <Button className="w-full" type="submit" disabled={isProcessing}>
+            {isProcessing ? "Checking..." : "Submit"}
+          </Button>
         </form>
         {error && <p className="text-red-500 mt-2">{error}</p>}
       </div>

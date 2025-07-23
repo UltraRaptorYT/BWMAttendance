@@ -20,6 +20,7 @@ import { Menu } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import userDataJson from "@/data/users.json";
+import { extractSheetId } from "@/lib/utils";
 
 export default function ScannerPage() {
   const phoneMap = useRef<Map<string, (typeof userDataJson)[0]>>(new Map());
@@ -53,11 +54,6 @@ export default function ScannerPage() {
     color: string;
   }>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-
-  const extractSheetId = (url: string): string => {
-    const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-    return match ? match[1] : "";
-  };
 
   useEffect(() => {
     const extractedId = extractSheetId(googleSheetLink);

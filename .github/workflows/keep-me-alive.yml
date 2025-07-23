@@ -1,0 +1,28 @@
+name: Keep Backend Alive
+
+on:
+  schedule:
+    - cron: "*/5 * * * *" # Every 5 minutes
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  ping-backend:
+    runs-on: ubuntu-latest
+    environment: PING ENV
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: pip install requests python-dotenv
+
+      - name: Run keep-alive script
+        env:
+          PING_URL: "http://bwm-attendance.vercel.app/api/scan?action=ping"
+        run: python ping.py
