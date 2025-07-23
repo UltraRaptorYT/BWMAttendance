@@ -87,7 +87,7 @@ export async function POST(request: Request) {
     }
 
     const results = matchingRows.map((row) => {
-      const extractedData: Record<string, any> = {};
+      const extractedData: Record<string, string> = {};
 
       columnsToExtract.forEach((colName: string) => {
         const columnIndex = columnMap[colName];

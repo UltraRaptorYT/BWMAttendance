@@ -19,7 +19,7 @@ export default function CustomScannerPage() {
   const [eventStatus, setEventStatus] = useState<
     "loading" | "found" | "not-found"
   >("loading");
-  const [scannedUser, setScannedUser] = useState<Record<string, any> | null>(
+  const [scannedUser, setScannedUser] = useState<Record<string, string> | null>(
     null
   );
   const [isProcessing, setIsProcessing] = useState(false);
