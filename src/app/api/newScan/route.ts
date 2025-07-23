@@ -61,6 +61,7 @@ export async function POST(request: Request) {
       });
     } catch (e) {
       // If quoted name fails, try without quotes
+      console.log(e);
       range = `${actualSheetName}!${codeColumn}:${codeColumn}`;
       readRes = await sheets.spreadsheets.values.get({
         spreadsheetId: sheetId,
@@ -99,6 +100,7 @@ export async function POST(request: Request) {
         },
       });
     } catch (e) {
+      console.log(e);
       range = `${actualSheetName}!A:C`;
       await sheets.spreadsheets.values.append({
         spreadsheetId: sheetId,
