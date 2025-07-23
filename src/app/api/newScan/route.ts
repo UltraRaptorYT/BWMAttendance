@@ -30,12 +30,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Step 1: Get the spreadsheet metadata to handle special characters in sheet names
+    // Step 1: Find the correct sheet
     const spreadsheet = await sheets.spreadsheets.get({
       spreadsheetId: sheetId,
     });
 
-    // Find the sheet by name (case-insensitive)
     const sheet = spreadsheet.data.sheets?.find(
       (s) => s.properties?.title?.toLowerCase() === sheetName.toLowerCase()
     );
@@ -48,33 +47,19 @@ export async function POST(request: Request) {
     }
 
     const actualSheetName = sheet.properties.title;
+    const codeColumn = "B";
 
-    const codeColumn = "B"; // Adjust based on your actual column
+    // Step 2: Read all codes using batchGet (future-safe)
+    const range = `'${actualSheetName}'!${codeColumn}:${codeColumn}`;
+    const readRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range,
+    });
 
-    let range = `'${actualSheetName}'!${codeColumn}:${codeColumn}`;
-    let readRes;
+    const codes = readRes.data.values?.flat().map((c) => c.trim()) || [];
+    const codeSet = new Set(codes);
 
-    try {
-      readRes = await sheets.spreadsheets.values.get({
-        spreadsheetId: sheetId,
-        range: range,
-      });
-    } catch (e) {
-      // If quoted name fails, try without quotes
-      console.log(e);
-      range = `${actualSheetName}!${codeColumn}:${codeColumn}`;
-      readRes = await sheets.spreadsheets.values.get({
-        spreadsheetId: sheetId,
-        range: range,
-      });
-    }
-
-    const codes = readRes.data.values?.flat() || [];
-    const existingIndex = codes.findIndex(
-      (cell) => cell?.trim() === code.trim()
-    );
-
-    if (existingIndex !== -1) {
+    if (codeSet.has(code.trim())) {
       return NextResponse.json({
         success: false,
         reason: "duplicate",
@@ -82,40 +67,25 @@ export async function POST(request: Request) {
       });
     }
 
-    // Step 3: Append new attendance record
+    // Step 3: Append attendance
     const timestamp = new Date().toLocaleString("en-US", {
       timeZone: "Asia/Singapore",
     });
 
-    // Adjust the append range and values based on your sheet structure
-    range = `'${actualSheetName}'!A:C`;
-
-    try {
-      await sheets.spreadsheets.values.append({
-        spreadsheetId: sheetId,
-        range: range,
-        valueInputOption: "USER_ENTERED",
-        requestBody: {
-          values: [[timestamp, code, true]], // Adjust columns as needed
-        },
-      });
-    } catch (e) {
-      console.log(e);
-      range = `${actualSheetName}!A:C`;
-      await sheets.spreadsheets.values.append({
-        spreadsheetId: sheetId,
-        range: range,
-        valueInputOption: "USER_ENTERED",
-        requestBody: {
-          values: [[timestamp, code, true]],
-        },
-      });
-    }
+    const appendRange = `'${actualSheetName}'!A:C`;
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: sheetId,
+      range: appendRange,
+      valueInputOption: "USER_ENTERED",
+      requestBody: {
+        values: [[timestamp, code, true]],
+      },
+    });
 
     return NextResponse.json({
       success: true,
       message: `Successfully recorded scan for code: ${code}`,
-      timestamp: timestamp,
+      timestamp,
     });
   } catch (err) {
     console.error("Error appending to Google Sheet:", err);
