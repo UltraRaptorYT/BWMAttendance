@@ -145,7 +145,7 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const { params, wm } = buildParams(url.searchParams);
     return await proxy(params, wm);
-  } catch (e: any) {
+  } catch (e) {
     if (e instanceof Response) return e;
     return new Response("Unexpected error.", { status: 500 });
   }
@@ -176,7 +176,7 @@ export async function POST(req: Request) {
 
     const { params, wm } = buildParams(incoming);
     return await proxy(params, wm);
-  } catch (e: any) {
+  } catch (e) {
     if (e instanceof Response) return e;
     return new Response("Unexpected error.", { status: 500 });
   }
