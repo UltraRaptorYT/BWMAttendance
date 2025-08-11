@@ -65,7 +65,7 @@ export default function CustomScannerPage() {
           code: code,
           SHEET_ID: extractSheetId(eventData.sheet_link || ""),
           SHEET_NAME: eventData.db_name || "RSVP",
-          scanned_info: eventData.scanned_info || "Name,Contact Number,Color",
+          scanned_info: eventData.scanned_info || "Name,Mobile Number",
           code_column: "Code",
         }),
       });
@@ -73,7 +73,7 @@ export default function CustomScannerPage() {
         code: code,
         SHEET_ID: extractSheetId(eventData.sheet_link || ""),
         SHEET_NAME: eventData.db_name || "RSVP",
-        scanned_info: eventData.scanned_info || "Name,Contact Number,Color",
+        scanned_info: eventData.scanned_info || "Name,Mobile Number",
         code_column: "Code",
       });
       const result = await response.json();
