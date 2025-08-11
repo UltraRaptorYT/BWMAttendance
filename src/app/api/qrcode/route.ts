@@ -46,8 +46,13 @@ function buildParams(raw: URLSearchParams) {
   out.set("size", size);
 
   const margin = raw.get("margin");
+  const wm = raw.get("wm");
   if (!margin) {
-    out.set("margin", "30");
+    if (wm) {
+      out.set("margin", "30");
+    } else {
+      out.set("margin", "25");
+    }
   }
 
   const skipList = ["data", "size", "margin", "wm"];
