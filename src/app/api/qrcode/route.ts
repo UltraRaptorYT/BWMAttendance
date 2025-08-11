@@ -124,7 +124,6 @@ async function proxy(params: URLSearchParams, wm: string) {
     dominant-baseline="middle"
     font-size="${fontSize}"
     font-weight="700"
-    font-family="Arial, Helvetica, sans-serif"
     fill="#${wmColor}"
     filter="url(#shadow)"
   >${escapeXML(wm)}</text>
