@@ -1,7 +1,6 @@
 import sharp from "sharp";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 const ALLOWED_PARAMS = new Set([
   "data",
