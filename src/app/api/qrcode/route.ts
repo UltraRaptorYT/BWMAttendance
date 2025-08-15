@@ -118,6 +118,7 @@ async function proxy(params: URLSearchParams, wm: string) {
     </filter>
   </defs>
   <text
+    font-family="Arial, sans-serif"
     x="50%"
     y="${y}"
     text-anchor="middle"
