@@ -58,7 +58,6 @@ export async function POST(req: Request) {
     const data = await req.json();
     console.log(data);
     const base64_string = await getWaterMarkImageByText(data.picUrl, "p");
-    const buffer = Buffer.from(base64_string, "base64");
     return new Response(base64_string, {
       status: 200,
       headers: {},
