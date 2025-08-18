@@ -1,6 +1,6 @@
 import sharp from "sharp";
 
-export const getWaterMarkImageByTxt = async (
+const getWaterMarkImageByTxt = async (
   width: number,
   height: number,
   txt: string
@@ -13,7 +13,7 @@ export const getWaterMarkImageByTxt = async (
   return sharp(Buffer.from(svg)).toFormat("png");
 };
 
-export const getWaterMarkImageByText = async (
+const getWaterMarkImageByText = async (
   picUrl: string,
   markTxt: string = "aigf.art",
   width: number = 400,
