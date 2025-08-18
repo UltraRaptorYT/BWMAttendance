@@ -1,4 +1,8 @@
 import sharp from "sharp";
+import path from "path";
+
+path.resolve(process.cwd(), "fonts", "fonts.conf");
+path.resolve(process.cwd(), "fonts", "Arial Bold.ttf");
 
 export const runtime = "nodejs";
 
@@ -118,16 +122,18 @@ async function proxy(params: URLSearchParams, wm: string) {
     </filter>
   </defs>
   <text
-    font-family="Helvetica, Arial, sans-serif"
     x="50%"
-    y="${y}"
-    text-anchor="middle"
     dominant-baseline="middle"
+    text-anchor="middle"
+    y="${y}"
+    font-family="Arial Bold'"
     font-size="${fontSize}"
-    font-weight="700"
+    font-weight="bold"
     fill="#${wmColor}"
-    filter="url(#shadow)"
-  >${escapeXML(wm)}</text>
+    letter-spacing=".8"
+  >
+    ${escapeXML(wm)}
+  </text>
 </svg>`.trim();
 
   // Single composite, force PNG output
