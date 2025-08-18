@@ -19,6 +19,7 @@ const ALLOWED_PARAMS = new Set([
   "format",
   "wm",
   "wmcolor",
+  "wmsize",
 ]);
 
 const stripHash = (v: string) => v.replace(/^#/, "").toUpperCase();
@@ -107,7 +108,8 @@ async function proxy(params: URLSearchParams, wm: string) {
   const wmColorRaw = params.get("wmcolor") || "FF0000";
   const wmColor = stripHash(wmColorRaw);
 
-  const fontSize = Math.max(12, Math.round(side * 0.08));
+  const fontSize =
+    params.get("wmsize") || Math.max(12, Math.round(side * 0.08));
   const y = side - Math.max(8, Math.round(side * 0.01));
 
   const escapeXML = (s: string) =>
