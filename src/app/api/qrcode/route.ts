@@ -1,4 +1,5 @@
 import sharp from "sharp";
+import { createCanvas } from "@napi-rs/canvas";
 
 export const runtime = "nodejs";
 
@@ -22,6 +23,15 @@ const isSquare = (s: string) => {
   const m = s.match(/^(\d+)x(\d+)$/i);
   return !!m && m[1] === m[2];
 };
+
+function hexToRgb(hex: string) {
+  const clean = hex.replace(/^#/, "");
+  const bigint = parseInt(clean, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return { r, g, b };
+}
 
 function buildParams(raw: URLSearchParams) {
   const out = new URLSearchParams();
@@ -71,6 +81,44 @@ function buildParams(raw: URLSearchParams) {
   return { params: out, wm: raw.get("wm") || "" };
 }
 
+async function createWatermarkBuffer(
+  text: string,
+  width: number,
+  height: number,
+  color: string
+): Promise<Buffer> {
+  const canvas = createCanvas(width, height);
+  const ctx = canvas.getContext("2d");
+
+  // Clear canvas with transparency
+  ctx.clearRect(0, 0, width, height);
+
+  // Calculate font size and position
+  const fontSize = Math.max(12, Math.round(width * 0.08));
+  const y = height - Math.max(8, Math.round(height * 0.04));
+
+  // Set up text shadow
+  ctx.shadowColor = "rgba(0, 0, 0, 0.35)";
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 1;
+  ctx.shadowBlur = 2;
+
+  // Set text properties
+  ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  // Parse color and set fill style
+  const rgb = hexToRgb(color);
+  ctx.fillStyle = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+
+  // Draw text
+  ctx.fillText(text, width / 2, y);
+
+  // Convert canvas to buffer
+  return canvas.toBuffer("image/png");
+}
+
 async function proxy(params: URLSearchParams, wm: string) {
   const upstream = `https://api.qrserver.com/v1/create-qr-code/?${params.toString()}`;
 
@@ -97,42 +145,26 @@ async function proxy(params: URLSearchParams, wm: string) {
     });
   }
 
+  // Get dimensions
   const side =
     parseInt((params.get("size") ?? "300x300").split("x")[0], 10) || 300;
 
+  // Get watermark color
   const wmColorRaw = params.get("wmcolor") || "FF0000";
   const wmColor = stripHash(wmColorRaw);
 
-  const fontSize = Math.max(12, Math.round(side * 0.08));
-  const y = side - Math.max(8, Math.round(side * 0.04));
+  // Create watermark using canvas
+  const watermarkBuffer = await createWatermarkBuffer(wm, side, side, wmColor);
 
-  const escapeXML = (s: string) =>
-    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-  // Build SVG overlay at the same dimensions as the QR
-  const overlaySvg = `
-<svg xmlns="http://www.w3.org/2000/svg" width="${side}" height="${side}" viewBox="0 0 ${side} ${side}">
-  <defs>
-    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-opacity="0.35"/>
-    </filter>
-  </defs>
-  <text
-    font-family="Arial, sans-serif"
-    x="50%"
-    y="${y}"
-    text-anchor="middle"
-    dominant-baseline="middle"
-    font-size="${fontSize}"
-    font-weight="700"
-    fill="#${wmColor}"
-    filter="url(#shadow)"
-  >${escapeXML(wm)}</text>
-</svg>`.trim();
-
-  // Single composite, force PNG output
+  // Composite watermark onto QR code
   buffer = await sharp(buffer)
-    .composite([{ input: Buffer.from(overlaySvg) }]) // overlay drawn at (0,0) within same-size SVG
+    .composite([
+      {
+        input: watermarkBuffer,
+        top: 0,
+        left: 0,
+      },
+    ])
     .png()
     .toBuffer();
 
@@ -152,6 +184,7 @@ export async function GET(req: Request) {
     return await proxy(params, wm);
   } catch (e) {
     if (e instanceof Response) return e;
+    console.error("GET error:", e);
     return new Response("Unexpected error.", { status: 500 });
   }
 }
@@ -183,6 +216,7 @@ export async function POST(req: Request) {
     return await proxy(params, wm);
   } catch (e) {
     if (e instanceof Response) return e;
+    console.error("POST error:", e);
     return new Response("Unexpected error.", { status: 500 });
   }
 }
