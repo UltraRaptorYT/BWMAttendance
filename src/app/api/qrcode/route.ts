@@ -108,7 +108,7 @@ async function proxy(params: URLSearchParams, wm: string) {
   const wmColor = stripHash(wmColorRaw);
 
   const fontSize = Math.max(12, Math.round(side * 0.08));
-  const y = side - Math.max(8, Math.round(side * 0.04));
+  const y = side - Math.max(8, Math.round(side * 0.01));
 
   const escapeXML = (s: string) =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -126,7 +126,7 @@ async function proxy(params: URLSearchParams, wm: string) {
     dominant-baseline="middle"
     text-anchor="middle"
     y="${y}"
-    font-family="Arial Bold'"
+    font-family="'Arial Bold','Arial','sans-serif'"
     font-size="${fontSize}"
     font-weight="bold"
     fill="#${wmColor}"
