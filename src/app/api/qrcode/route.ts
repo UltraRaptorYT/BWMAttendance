@@ -36,7 +36,7 @@ function buildParams(raw: URLSearchParams) {
   if (!data || data.length < 1) {
     throw new Response("Missing required `data` query param.", { status: 400 });
   }
-  out.set("data", encodeURIComponent(data));
+  out.set("data", data);
 
   let size = raw.get("size") || "";
   if (!size) {
