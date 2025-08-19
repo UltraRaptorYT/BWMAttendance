@@ -52,30 +52,24 @@ export default function CustomScannerPage() {
       }
 
       console.log("Fetching user data for code:", code);
-      console.log("Event data:", {
-        SHEET_ID: extractSheetId(eventData.sheet_link || ""),
-        SHEET_NAME: eventData.db_name || "RSVP",
-        scanned_info: eventData.scanned_info,
-      });
-
-      const response = await fetch("/api/newUser", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code: code,
-          SHEET_ID: extractSheetId(eventData.sheet_link || ""),
-          SHEET_NAME: eventData.db_name || "RSVP",
-          scanned_info: eventData.scanned_info || "Name,Mobile Number",
-          code_column: "Code",
-        }),
-      });
-      console.log({
+      const eventBody = {
         code: code,
         SHEET_ID: extractSheetId(eventData.sheet_link || ""),
         SHEET_NAME: eventData.db_name || "RSVP",
         scanned_info: eventData.scanned_info || "Name,Mobile Number",
-        code_column: "Code",
+        code_column: eventData.code_column || "Code",
+      };
+
+      console.log(eventBody);
+
+      const response = await fetch("/api/newUser", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(eventBody),
       });
+
+      console.log(eventBody);
+
       const result = await response.json();
       console.log("User data response:", result);
 

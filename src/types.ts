@@ -8,4 +8,5 @@ export type EventData = {
   rsvp_name: string;
   attendance_name: string;
   created_at: string;
+  code_column: string;
 };
