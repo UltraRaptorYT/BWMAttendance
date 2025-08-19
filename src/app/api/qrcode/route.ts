@@ -3,6 +3,7 @@ import path from "path";
 
 path.resolve(process.cwd(), "fonts", "fonts.conf");
 path.resolve(process.cwd(), "fonts", "Arial Bold.ttf");
+path.resolve(process.cwd(), "fonts", "KaiTi.ttf");
 
 export const runtime = "nodejs";
 
@@ -128,7 +129,7 @@ async function proxy(params: URLSearchParams, wm: string) {
     dominant-baseline="middle"
     text-anchor="middle"
     y="${y}"
-    font-family="'Arial Bold','Arial','sans-serif'"
+    font-family="'KaiTi','Arial Bold','Arial','sans-serif'"
     font-size="${fontSize}"
     font-weight="bold"
     fill="#${wmColor}"

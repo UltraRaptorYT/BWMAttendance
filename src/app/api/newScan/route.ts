@@ -59,12 +59,15 @@ export async function POST(request: Request) {
     const codes = readRes.data.values?.flat().map((c) => c.trim()) || [];
     const codeSet = new Set(codes);
 
+    let codeStatus = "SCANNED"
+
     if (codeSet.has(code.trim())) {
-      return NextResponse.json({
-        success: false,
-        reason: "duplicate",
-        message: `Code ${code} has already been scanned`,
-      });
+      codeStatus = "ALREADY SCANNED"
+      // return NextResponse.json({
+      //   success: false,
+      //   reason: "duplicate",
+      //   message: `Code ${code} has already been scanned`,
+      // });
     }
 
     // Step 3: Append attendance
@@ -78,7 +81,7 @@ export async function POST(request: Request) {
       range: appendRange,
       valueInputOption: "USER_ENTERED",
       requestBody: {
-        values: [[timestamp, code, true]],
+        values: [[timestamp, code, codeStatus]],
       },
     });
 
