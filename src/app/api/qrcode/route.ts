@@ -55,7 +55,7 @@ function buildParams(raw: URLSearchParams) {
   const wm = raw.get("wm");
   if (!margin) {
     if (wm) {
-      out.set("margin", "30");
+      out.set("margin", "35");
     } else {
       out.set("margin", "25");
     }
@@ -129,7 +129,7 @@ async function proxy(params: URLSearchParams, wm: string) {
     dominant-baseline="middle"
     text-anchor="middle"
     y="${y}"
-    font-family="'KaiTi','Arial Bold','Arial','sans-serif'"
+    font-family="'KaiTi','Arial','sans-serif'"
     font-size="${fontSize}"
     font-weight="bold"
     fill="#${wmColor}"
