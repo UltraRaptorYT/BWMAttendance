@@ -227,7 +227,7 @@ export default function CustomScannerPage() {
 
       <div className="p-5 w-full md:w-2/5">
         {isProcessing && (
-          <div className="absolute top-12 -translate-x-1/2 left-1/2 md:left-0 md:translate-none text-sm max-w-md md:relative md:top-0 text-center text-gray-500 animate-pulse">
+          <div className="absolute top-5 -translate-x-1/2 left-1/2 md:left-0 md:translate-none text-sm max-w-md md:relative md:top-0 text-center text-gray-500 animate-pulse">
             ⏳ Processing scan...
           </div>
         )}
