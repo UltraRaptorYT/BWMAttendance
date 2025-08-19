@@ -56,19 +56,16 @@ export async function POST(request: Request) {
       range,
     });
 
-    const codes = readRes.data.values?.flat().map((c) => c.trim()) || [];
-    const codeSet = new Set(codes);
+    const codeToCheck = String(code).trim();
 
-    let codeStatus = "SCANNED"
+    const existingCodes =
+      readRes.data.values
+        ?.map((row) => String(row?.[0] ?? "").trim())
+        .filter(Boolean) ?? [];
 
-    if (codeSet.has(code.trim())) {
-      codeStatus = "ALREADY SCANNED"
-      // return NextResponse.json({
-      //   success: false,
-      //   reason: "duplicate",
-      //   message: `Code ${code} has already been scanned`,
-      // });
-    }
+    const isDuplicate = new Set(existingCodes).has(codeToCheck);
+
+    const codeStatus = isDuplicate ? "ALREADY SCANNED" : "SCANNED";
 
     // Step 3: Append attendance
     const timestamp = new Date().toLocaleString("en-US", {
@@ -86,8 +83,11 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({
-      success: true,
-      message: `Successfully recorded scan for code: ${code}`,
+      success: !isDuplicate,
+      duplicate: isDuplicate,
+      message: isDuplicate
+        ? `Code ${codeToCheck} has already been scanned`
+        : `Successfully recorded scan for code: ${codeToCheck}`,
       timestamp,
     });
   } catch (err) {

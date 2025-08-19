@@ -124,7 +124,7 @@ export default function CustomScannerPage() {
           console.log("User not found in database, but scan recorded");
         }
 
-        if (result.success === false && result.reason === "duplicate") {
+        if (!result.success && result.duplicate) {
           toast.warning(`⚠️ Already scanned: ${value}`);
         } else {
           toast.success(`✅ Scan ${value} recorded!`);
