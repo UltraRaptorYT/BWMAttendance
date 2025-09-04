@@ -21,6 +21,13 @@ const ALLOWED_PARAMS = new Set([
   "wm",
   "wmcolor",
   "wmsize",
+  "wmfont",
+  "wmbold",
+  "title",
+  "titlecolor",
+  "titlesize",
+  "titlefont",
+  "titlebold",
 ]);
 
 const stripHash = (v: string) => v.replace(/^#/, "").toUpperCase();
@@ -52,32 +59,35 @@ function buildParams(raw: URLSearchParams) {
   out.set("size", size);
 
   const margin = raw.get("margin");
-  const wm = raw.get("wm");
+  const wm = raw.get("wm") || "";
+  const title = raw.get("title") || "";
+
   if (!margin) {
-    if (wm) {
+    if (wm || title) {
       out.set("margin", "35");
     } else {
       out.set("margin", "25");
     }
   }
 
-  const skipList = ["data", "size", "margin", "wm"];
+  const skipList = ["data", "size", "margin", "wm", "title"];
   for (const key of ALLOWED_PARAMS) {
     if (skipList.includes(key)) continue;
     const v = raw.get(key);
     if (v == null) continue;
 
-    if (key === "color" || key === "bgcolor" || key === "wmcolor") {
+    const colorKeys = ["color", "bgcolor", "wmcolor", "titlecolor"];
+    if (colorKeys.includes(key)) {
       out.set(key, stripHash(v)); // API expects hex without '#'
     } else {
       out.set(key, v);
     }
   }
 
-  return { params: out, wm: raw.get("wm") || "" };
+  return { params: out, wm, title };
 }
 
-async function proxy(params: URLSearchParams, wm: string) {
+async function proxy(params: URLSearchParams, wm: string, title: string) {
   const upstream = `https://api.qrserver.com/v1/create-qr-code/?${params.toString()}`;
 
   const res = await fetch(upstream, { cache: "no-store" });
@@ -93,8 +103,10 @@ async function proxy(params: URLSearchParams, wm: string) {
     .png()
     .toBuffer();
 
-  if (!wm.trim()) {
-    return new Response(buffer, {
+  if (!wm.trim() && !title.trim()) {
+    const u8 = new Uint8Array(buffer);
+    const body = new Blob([u8.buffer], { type: "image/png" });
+    return new Response(body, {
       status: 200,
       headers: {
         "Content-Type": "image/png",
@@ -106,12 +118,19 @@ async function proxy(params: URLSearchParams, wm: string) {
   const side =
     parseInt((params.get("size") ?? "300x300").split("x")[0], 10) || 300;
 
-  const wmColorRaw = params.get("wmcolor") || "FF0000";
-  const wmColor = stripHash(wmColorRaw);
-
-  const fontSize =
+  const wmColor = stripHash(params.get("wmcolor") || "FF0000");
+  const wmFontSize =
     params.get("wmsize") || Math.max(12, Math.round(side * 0.08));
-  const y = side - Math.max(8, Math.round(side * 0.01));
+  const yBottom = side - Math.max(8, Math.round(side * 0.01));
+  const wmFont = params.get("wmfont");
+  const wmBold = params.get("wmbold") == "true";
+
+  const titleColor = stripHash(params.get("titlecolor") || "000000");
+  const titleFontSize =
+    params.get("titlesize") || Math.max(12, Math.round(side * 0.08));
+  const yTop = Math.max(3, Math.round(side * 0.01)) + Number(titleFontSize);
+  const titleFont = params.get("titlefont");
+  const titleBold = params.get("titlebold") == "true";
 
   const escapeXML = (s: string) =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -124,28 +143,51 @@ async function proxy(params: URLSearchParams, wm: string) {
       <feDropShadow dx="0" dy="1" stdDeviation="1" flood-opacity="0.35"/>
     </filter>
   </defs>
+
+  ${
+    title.trim()
+      ? `
   <text
     x="50%"
-    dominant-baseline="middle"
+    y="${yTop}"
+    dominant-baseline="hanging"
     text-anchor="middle"
-    y="${y}"
-    font-family="'KaiTi','Arial','sans-serif'"
-    font-size="${fontSize}"
-    font-weight="bold"
+    font-family="${titleFont},'KaiTi','Arial','sans-serif'"
+    font-size="${titleFontSize}"
+    font-weight="${titleBold ? "bold" : "normal"}"
+    fill="#${titleColor}"
+    letter-spacing=".8"
+  >${escapeXML(title)}</text>`
+      : ""
+  }
+
+  ${
+    wm.trim()
+      ? `
+  <text
+    x="50%"
+    y="${yBottom}"
+    dominant-baseline="alphabetic"
+    text-anchor="middle"
+    font-family="${wmFont},'KaiTi','Arial','sans-serif'"
+    font-size="${wmFontSize}"
+    font-weight="${wmBold ? "bold" : "normal"}"
     fill="#${wmColor}"
     letter-spacing=".8"
-  >
-    ${escapeXML(wm)}
-  </text>
+  >${escapeXML(wm)}</text>`
+      : ""
+  }
 </svg>`.trim();
 
   // Single composite, force PNG output
   buffer = await sharp(buffer)
-    .composite([{ input: Buffer.from(overlaySvg) }]) // overlay drawn at (0,0) within same-size SVG
+    .composite([{ input: Buffer.from(overlaySvg) }])
     .png()
     .toBuffer();
 
-  return new Response(buffer, {
+  const u8 = new Uint8Array(buffer);
+  const body = new Blob([u8.buffer], { type: "image/png" });
+  return new Response(body, {
     status: 200,
     headers: {
       "Content-Type": "image/png",
@@ -157,8 +199,8 @@ async function proxy(params: URLSearchParams, wm: string) {
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
-    const { params, wm } = buildParams(url.searchParams);
-    return await proxy(params, wm);
+    const { params, wm, title } = buildParams(url.searchParams);
+    return await proxy(params, wm, title);
   } catch (e) {
     if (e instanceof Response) return e;
     return new Response("Unexpected error.", { status: 500 });
@@ -188,8 +230,8 @@ export async function POST(req: Request) {
       });
     }
 
-    const { params, wm } = buildParams(incoming);
-    return await proxy(params, wm);
+    const { params, wm, title } = buildParams(incoming);
+    return await proxy(params, wm, title);
   } catch (e) {
     if (e instanceof Response) return e;
     return new Response("Unexpected error.", { status: 500 });
