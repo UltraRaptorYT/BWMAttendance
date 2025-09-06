@@ -63,7 +63,9 @@ function buildParams(raw: URLSearchParams) {
   const title = raw.get("title") || "";
 
   if (!margin) {
-    if (wm || title) {
+    if (wm && title) {
+      out.set("margin", "40");
+    } else if (wm || title) {
       out.set("margin", "35");
     } else {
       out.set("margin", "25");
