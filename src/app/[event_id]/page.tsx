@@ -226,7 +226,9 @@ export default function CustomScannerPage() {
           </div>
         )}
         <div className="bg-white shadow-md rounded-lg p-4 w-full max-w-md text-lg">
-          <h3 className="font-bold text-xl mb-2">User Info</h3>
+          <h3 className="font-bold text-xl mb-2 text-center">
+            {eventData?.event_name} User Info
+          </h3>
           {scannedInfoColumns.map((columnName, i) => {
             console.log(columnName, scannedUser);
             const value = scannedUser?.[columnName] || "";
