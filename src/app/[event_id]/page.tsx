@@ -11,7 +11,11 @@ import {
   IDetectedBarcode,
 } from "@yudiel/react-qr-scanner";
 import { toast } from "sonner";
-import { extractSheetId } from "@/lib/utils";
+import {
+  extractSheetId,
+  isValidCssColor,
+  getHexFromKeyword,
+} from "@/lib/utils";
 
 export default function CustomScannerPage() {
   const { event_id } = useParams();
@@ -233,18 +237,24 @@ export default function CustomScannerPage() {
             console.log(columnName, scannedUser);
             const value = scannedUser?.[columnName] || "";
 
-            // Special handling for color field if needed
             if (columnName.toLowerCase() === "color" && value) {
+              let displayName = value;
+              let colorHex = value;
+              if (isValidCssColor(value)) {
+                colorHex = getHexFromKeyword(value);
+                displayName = value.toUpperCase();
+              } else if (!value.startsWith("#")) {
+                colorHex = `#${value}`;
+              }
+
               return (
                 <p key={"eventData" + i} className="mb-1">
                   <strong>{columnName}:</strong>{" "}
                   <span
-                    className="font-bold"
-                    style={{
-                      color: value.startsWith("#") ? value : `#${value}`,
-                    }}
+                    className="font-bold text-shadow-lg"
+                    style={{ color: colorHex }}
                   >
-                    {value}
+                    {displayName}
                   </span>
                 </p>
               );
