@@ -22,3 +22,20 @@ export const getHexFromKeyword = (keyword: string) => {
   ctx.fillStyle = keyword;
   return ctx.fillStyle;
 };
+
+export const HEX_TO_COLOR: Record<string, string> = {
+  // CUSTOM
+  "#feb914": "Yellow",
+
+  // STANDARD
+  "#ffff00": "Yellow",
+  "#008000": "Green",
+  "#00ff00": "Lime",
+  "#ff0000": "Red",
+  "#0000ff": "Blue",
+  "#ffa500": "Orange",
+  "#800080": "Purple",
+};
+
+export const normalizeHex = (hex: string) =>
+  hex.toLowerCase().replace(/^#?([a-f0-9]{6})$/i, "#$1");
