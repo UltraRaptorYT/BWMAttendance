@@ -15,6 +15,8 @@ import {
   extractSheetId,
   isValidCssColor,
   getHexFromKeyword,
+  normalizeHex,
+  HEX_TO_COLOR,
 } from "@/lib/utils";
 
 export default function CustomScannerPage() {
@@ -238,22 +240,22 @@ export default function CustomScannerPage() {
             const value = scannedUser?.[columnName] || "";
 
             if (columnName.toLowerCase() === "color" && value) {
-              let displayName = value;
-              let colorHex = value;
-              if (isValidCssColor(value)) {
-                colorHex = getHexFromKeyword(value);
-                displayName = value.toUpperCase();
-              } else if (!value.startsWith("#")) {
-                colorHex = `#${value}`;
+              const normalized = normalizeHex(value);
+              const mappedName = HEX_TO_COLOR[normalized];
+
+              let displayName = mappedName || value;
+              let colorHex = mappedName ? normalized : value;
+
+              if (!mappedName && !value.startsWith("#")) {
+                displayName =
+                  value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+                colorHex = value;
               }
 
               return (
-                <p key={"eventData" + i} className="mb-1">
+                <p key={`color-${i}`} className="mb-1">
                   <strong>{columnName}:</strong>{" "}
-                  <span
-                    className="font-bold text-shadow-lg"
-                    style={{ color: colorHex }}
-                  >
+                  <span className="font-bold" style={{ color: colorHex }}>
                     {displayName}
                   </span>
                 </p>
