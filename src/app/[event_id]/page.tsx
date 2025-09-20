@@ -11,13 +11,7 @@ import {
   IDetectedBarcode,
 } from "@yudiel/react-qr-scanner";
 import { toast } from "sonner";
-import {
-  extractSheetId,
-  isValidCssColor,
-  getHexFromKeyword,
-  normalizeHex,
-  HEX_TO_COLOR,
-} from "@/lib/utils";
+import { extractSheetId, normalizeHex, HEX_TO_COLOR } from "@/lib/utils";
 
 export default function CustomScannerPage() {
   const { event_id } = useParams();
