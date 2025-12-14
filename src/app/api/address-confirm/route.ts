@@ -73,7 +73,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const sheetRow = matchIndex + 2; // because range starts at row 2
+    // const sheetRow = matchIndex + 2; // because range starts at row 2
 
     const row = rows[matchIndex];
 
