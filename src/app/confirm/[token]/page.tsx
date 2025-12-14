@@ -225,9 +225,7 @@ export default function ConfirmAddressPage() {
           <div className="mt-5 grid gap-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <div className="text-sm text-black/70 mb-1">
-                  Blk/No (new) (Column M)
-                </div>
+                <div className="text-sm text-black/70 mb-1">Blk/No (new)</div>
                 <input
                   className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2"
                   value={newBlk}
@@ -235,9 +233,7 @@ export default function ConfirmAddressPage() {
                 />
               </div>
               <div>
-                <div className="text-sm text-black/70 mb-1">
-                  Unit (new) (Column O)
-                </div>
+                <div className="text-sm text-black/70 mb-1">Unit (new)</div>
                 <input
                   className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2"
                   value={newUnit}
@@ -247,9 +243,7 @@ export default function ConfirmAddressPage() {
             </div>
 
             <div>
-              <div className="text-sm text-black/70 mb-1">
-                Street (new) (Column N)
-              </div>
+              <div className="text-sm text-black/70 mb-1">Street (new)</div>
               <input
                 className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2"
                 value={newStreet}
@@ -259,7 +253,7 @@ export default function ConfirmAddressPage() {
 
             <div>
               <div className="text-sm text-black/70 mb-1">
-                Postal Code (new) (Column P)
+                Postal Code (new)
               </div>
               <input
                 className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2"
