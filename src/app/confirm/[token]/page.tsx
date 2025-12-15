@@ -80,13 +80,8 @@ export default function ConfirmAddressPage() {
   }, [token]);
 
   const canSubmit = useMemo(() => {
-    if (!decision) return false;
-    if (decision === "correct") return true;
-
-    return (
-      newBlk.trim() && newStreet.trim() && newUnit.trim() && newPostal.trim()
-    );
-  }, [decision, newBlk, newStreet, newUnit, newPostal]);
+    return !!decision; // only require selecting "correct" or "changed"
+  }, [decision]);
 
   const submit = async () => {
     if (!decision) return;
@@ -101,10 +96,10 @@ export default function ConfirmAddressPage() {
           newAddress:
             decision === "changed"
               ? {
-                  blk: newBlk.trim(),
-                  street: newStreet.trim(),
-                  unit: newUnit.trim(),
-                  postal: newPostal.trim(),
+                  blk: newBlk.trim() || "",
+                  street: newStreet.trim() || "",
+                  unit: newUnit.trim() || "",
+                  postal: newPostal.trim() || "",
                 }
               : null,
         }),
