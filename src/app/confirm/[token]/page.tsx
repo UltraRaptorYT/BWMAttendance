@@ -227,8 +227,8 @@ export default function ConfirmAddressPage() {
             />
             <span>
               {L(
-                `a) if "correct",  please go above link and press "1"`,
-                `a) “正确”，请进入以上链接，点 “1”`
+                `1) if "correct",  click here`,
+                `1) “正确”，请选这个选项`
               )}
             </span>
           </label>
@@ -243,8 +243,8 @@ export default function ConfirmAddressPage() {
             />
             <span>
               {L(
-                `b) If address is "changed" or "not correct", please go above link and provide new address`,
-                `b) "地址已更改” 或 “错误”, 请在以上链接填写新地址。`
+                `2) If address is "changed" or "not correct", please provide new address below`,
+                `2) "地址已更改” 或 “错误”, 请在以下填写新地址。`
               )}
             </span>
           </label>
