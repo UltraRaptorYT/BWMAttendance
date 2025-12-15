@@ -129,15 +129,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid decision" }, { status: 400 });
   }
 
-  if (decision === "changed") {
-    const { blk, street, unit, postal } = newAddress || {};
-    if (!blk || !street || !unit || !postal) {
-      return NextResponse.json(
-        { error: "Missing new address fields" },
-        { status: 400 }
-      );
-    }
-  }
+  // if (decision === "changed") {
+  //   const { blk, street, unit, postal } = newAddress || {};
+  //   if (!blk || !street || !unit || !postal) {
+  //     return NextResponse.json(
+  //       { error: "Missing new address fields" },
+  //       { status: 400 }
+  //     );
+  //   }
+  // }
 
   try {
     // Find row by token (same as GET)
