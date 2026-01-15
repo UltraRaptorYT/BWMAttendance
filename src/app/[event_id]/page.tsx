@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import supabase from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import { EventData } from "@/types";
@@ -12,6 +12,13 @@ import {
 } from "@yudiel/react-qr-scanner";
 import { toast } from "sonner";
 import { extractSheetId, normalizeHex, HEX_TO_COLOR } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { SwitchCamera } from "lucide-react";
+
+type CameraDevice = {
+  deviceId: string;
+  label: string;
+};
 
 export default function CustomScannerPage() {
   const { event_id } = useParams();
@@ -23,6 +30,11 @@ export default function CustomScannerPage() {
     null
   );
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // --- Camera state ---
+  const [cameras, setCameras] = useState<CameraDevice[]>([]);
+  const [cameraIndex, setCameraIndex] = useState(0);
+  const selectedCamera = cameras[cameraIndex];
 
   useEffect(() => {
     const checkEventExists = async () => {
@@ -45,6 +57,57 @@ export default function CustomScannerPage() {
     }
   }, [event_id]);
 
+  // Fetch available cameras (best effort: prompts permission if needed)
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCameras = async () => {
+      if (!navigator?.mediaDevices?.enumerateDevices) return;
+
+      try {
+        // Some browsers won't reveal labels until permission is granted.
+        // We try to get permission once (video only) to populate labels.
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false,
+          });
+          stream.getTracks().forEach((t) => t.stop());
+        } catch {
+          // If user denies, we can still enumerate devices but labels may be blank.
+        }
+
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const vids = devices
+          .filter((d) => d.kind === "videoinput")
+          .map((d, idx) => ({
+            deviceId: d.deviceId,
+            label: d.label || `Camera ${idx + 1}`,
+          }));
+
+        if (!cancelled) {
+          setCameras(vids);
+          setCameraIndex(0);
+        }
+      } catch (e) {
+        console.error(e);
+        toast.error("Could not load cameras.");
+      }
+    };
+
+    loadCameras();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const switchCamera = useCallback(() => {
+    setCameraIndex((prev) => {
+      if (cameras.length <= 1) return prev;
+      return (prev + 1) % cameras.length;
+    });
+  }, [cameras.length]);
+
   const getUserData = async (code: string) => {
     try {
       if (!eventData) {
@@ -60,15 +123,11 @@ export default function CustomScannerPage() {
         code_column: eventData.code_column || "Code",
       };
 
-      console.log(eventBody);
-
       const response = await fetch("/api/newUser", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(eventBody),
       });
-
-      console.log(eventBody);
 
       const result = await response.json();
       console.log("User data response:", result);
@@ -107,15 +166,11 @@ export default function CustomScannerPage() {
         const result = await scanRes.json();
 
         if (!scanRes.ok) throw new Error("Scan API failed");
-        console.log(result);
-        console.log(userRes, "I");
 
         if (userRes) {
           setScannedUser(userRes);
-          console.log("User found:", userRes);
         } else {
           setScannedUser(null);
-          console.log("User not found in database, but scan recorded");
         }
 
         if (!result.success && result.duplicate) {
@@ -137,14 +192,13 @@ export default function CustomScannerPage() {
     (detectedCodes: IDetectedBarcode[]) => {
       const code = detectedCodes[0]?.rawValue;
       if (!code || isProcessing) return;
-      console.log("Scanned:", code);
       if (code.split("|").slice(-1)[0] != event_id) {
         toast.error("Invalid QR Code");
         return;
       }
       scanToSheet(code);
     },
-    [scanToSheet, isProcessing]
+    [scanToSheet, isProcessing, event_id]
   );
 
   const handleError = useCallback((error: unknown) => {
@@ -174,13 +228,24 @@ export default function CustomScannerPage() {
     return notFound();
   }
 
-  // Parse the scanned_info to get column names
   const scannedInfoColumns =
     eventData?.scanned_info?.split(",").map((col) => col.trim()) || [];
 
   return (
     <div className="flex flex-col md:flex-row justify-center items-center fullHeight">
-      <div className="w-4/5 mx-auto aspect-square max-w-3xl">
+      <div className="w-4/5 mx-auto aspect-square max-w-3xl relative">
+        {/* Small switch camera button */}
+        {cameras.length > 1 && (
+          <div className="absolute z-10 top-3 right-3 flex items-center gap-2">
+            <Button type="button" onClick={switchCamera} size={"icon"}>
+              <SwitchCamera />
+            </Button>
+            {/* <span className="text-xs bg-black/50 text-white px-2 py-1 rounded">
+              {selectedCamera?.label}
+            </span> */}
+          </div>
+        )}
+
         <ScannerComp
           formats={[
             "qr_code",
@@ -216,6 +281,14 @@ export default function CustomScannerPage() {
           }}
           allowMultiple={false}
           scanDelay={0}
+          // 👇 key bit: force the chosen camera
+          constraints={
+            selectedCamera
+              ? {
+                  deviceId: selectedCamera.deviceId,
+                }
+              : undefined
+          }
         />
       </div>
 
@@ -229,8 +302,8 @@ export default function CustomScannerPage() {
           <h3 className="font-bold text-xl mb-2 text-center">
             {eventData?.event_name} User Info
           </h3>
+
           {scannedInfoColumns.map((columnName, i) => {
-            console.log(columnName, scannedUser);
             const value = scannedUser?.[columnName] || "";
 
             if (columnName.toLowerCase() === "color" && value) {
@@ -262,6 +335,7 @@ export default function CustomScannerPage() {
               </p>
             );
           })}
+
           {!scannedUser && (
             <p className="text-gray-500 italic">No user scanned yet</p>
           )}
