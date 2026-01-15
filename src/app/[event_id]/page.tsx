@@ -247,6 +247,7 @@ export default function CustomScannerPage() {
         )}
 
         <ScannerComp
+          key={selectedCamera?.deviceId ?? "default-camera"}
           formats={[
             "qr_code",
             "micro_qr_code",
@@ -281,13 +282,10 @@ export default function CustomScannerPage() {
           }}
           allowMultiple={false}
           scanDelay={0}
-          // 👇 key bit: force the chosen camera
           constraints={
-            selectedCamera
-              ? {
-                  deviceId: selectedCamera.deviceId,
-                }
-              : undefined
+            selectedCamera?.deviceId
+              ? { deviceId: { exact: selectedCamera.deviceId } }
+              : { facingMode: "environment" }
           }
         />
       </div>
