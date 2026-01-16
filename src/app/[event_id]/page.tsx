@@ -228,13 +228,13 @@ export default function CustomScannerPage() {
     return notFound();
   }
 
-  const pickBackCameraIndex = (vids: CameraDevice[]) => {
+  function pickBackCameraIndex(vids: CameraDevice[]) {
     const keywords = ["back", "rear", "environment"];
     const idx = vids.findIndex((v) =>
       keywords.some((k) => v.label.toLowerCase().includes(k))
     );
     return idx >= 0 ? idx : 0;
-  };
+  }
 
   const scannedInfoColumns =
     eventData?.scanned_info?.split(",").map((col) => col.trim()) || [];
@@ -294,7 +294,7 @@ export default function CustomScannerPage() {
             }}
             allowMultiple={false}
             scanDelay={0}
-            constraints={{ deviceId: { exact: selectedCamera!.deviceId } }}
+            constraints={{ deviceId: { ideal: selectedCamera!.deviceId } }}
           />
         )}
       </div>
