@@ -87,7 +87,7 @@ export default function CustomScannerPage() {
 
         if (!cancelled) {
           setCameras(vids);
-          setCameraIndex(0);
+          setCameraIndex(pickBackCameraIndex(vids));
         }
       } catch (e) {
         console.error(e);
@@ -228,6 +228,14 @@ export default function CustomScannerPage() {
     return notFound();
   }
 
+  const pickBackCameraIndex = (vids: CameraDevice[]) => {
+    const keywords = ["back", "rear", "environment"];
+    const idx = vids.findIndex((v) =>
+      keywords.some((k) => v.label.toLowerCase().includes(k))
+    );
+    return idx >= 0 ? idx : 0;
+  };
+
   const scannedInfoColumns =
     eventData?.scanned_info?.split(",").map((col) => col.trim()) || [];
 
@@ -245,49 +253,50 @@ export default function CustomScannerPage() {
             </span> */}
           </div>
         )}
-
-        <ScannerComp
-          key={selectedCamera?.deviceId ?? "default-camera"}
-          formats={[
-            "qr_code",
-            "micro_qr_code",
-            "rm_qr_code",
-            "maxi_code",
-            "pdf417",
-            "aztec",
-            "data_matrix",
-            "matrix_codes",
-            "dx_film_edge",
-            "databar",
-            "databar_expanded",
-            "codabar",
-            "code_39",
-            "code_93",
-            "code_128",
-            "ean_8",
-            "ean_13",
-            "itf",
-            "linear_codes",
-            "upc_a",
-            "upc_e",
-          ]}
-          onScan={handleScan}
-          onError={handleError}
-          components={{
-            onOff: false,
-            torch: true,
-            zoom: true,
-            finder: true,
-            tracker: centerText,
-          }}
-          allowMultiple={false}
-          scanDelay={0}
-          constraints={
-            selectedCamera?.deviceId
-              ? { deviceId: { exact: selectedCamera.deviceId } }
-              : { facingMode: "environment" }
-          }
-        />
+        {cameras.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-gray-500">
+            Initializing camera...
+          </div>
+        ) : (
+          <ScannerComp
+            key={selectedCamera?.deviceId ?? "default-camera"}
+            formats={[
+              "qr_code",
+              "micro_qr_code",
+              "rm_qr_code",
+              "maxi_code",
+              "pdf417",
+              "aztec",
+              "data_matrix",
+              "matrix_codes",
+              "dx_film_edge",
+              "databar",
+              "databar_expanded",
+              "codabar",
+              "code_39",
+              "code_93",
+              "code_128",
+              "ean_8",
+              "ean_13",
+              "itf",
+              "linear_codes",
+              "upc_a",
+              "upc_e",
+            ]}
+            onScan={handleScan}
+            onError={handleError}
+            components={{
+              onOff: false,
+              torch: true,
+              zoom: true,
+              finder: true,
+              tracker: centerText,
+            }}
+            allowMultiple={false}
+            scanDelay={0}
+            constraints={{ deviceId: { exact: selectedCamera!.deviceId } }}
+          />
+        )}
       </div>
 
       <div className="p-5 w-full md:w-2/5">
