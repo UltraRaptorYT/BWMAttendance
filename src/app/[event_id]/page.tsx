@@ -17,7 +17,9 @@ export async function generateMetadata({
     .eq("id", event_id)
     .single();
 
-  const title = data?.event_name ?? "Scanner";
+  const title = data?.event_name
+    ? `${data?.event_name} - BWM Attendance`
+    : "BWM Attendance";
 
   return {
     title,
