@@ -11,7 +11,7 @@ import {
   IDetectedBarcode,
 } from "@yudiel/react-qr-scanner";
 import { toast } from "sonner";
-import { extractSheetId, normalizeHex, HEX_TO_COLOR } from "@/lib/utils";
+import { extractSheetId, HEX_TO_COLOR } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { SwitchCamera } from "lucide-react";
 
