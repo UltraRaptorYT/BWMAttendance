@@ -239,6 +239,35 @@ export default function CustomScannerPage() {
   const scannedInfoColumns =
     eventData?.scanned_info?.split(",").map((col) => col.trim()) || [];
 
+  function parseColorValue(raw: string) {
+    const v = (raw ?? "").trim();
+    if (!v) return null;
+
+    // Detect hex with or without leading '#'
+    const hexMatch = v.match(/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
+    if (hexMatch) {
+      let hex = hexMatch[1].toLowerCase();
+      // Expand shorthand #abc -> #aabbcc
+      if (hex.length === 3)
+        hex = hex
+          .split("")
+          .map((c) => c + c)
+          .join("");
+      const normalized = `#${hex}`;
+
+      const mappedName = HEX_TO_COLOR[normalized as keyof typeof HEX_TO_COLOR];
+      return {
+        displayName: mappedName ?? normalized,
+        colorHex: normalized,
+      };
+    }
+
+    // Otherwise treat as CSS color keyword (best effort)
+    const cssName = v.toLowerCase();
+    const displayName = cssName.charAt(0).toUpperCase() + cssName.slice(1);
+    return { displayName, colorHex: cssName };
+  }
+
   return (
     <div className="flex flex-col md:flex-row justify-center items-center fullHeight">
       <div className="w-4/5 mx-auto aspect-square max-w-3xl relative">
@@ -314,23 +343,16 @@ export default function CustomScannerPage() {
             const value = scannedUser?.[columnName] || "";
 
             if (columnName.toLowerCase() === "color" && value) {
-              const normalized = normalizeHex(value);
-              const mappedName = HEX_TO_COLOR[normalized];
-
-              let displayName = mappedName || value;
-              let colorHex = mappedName ? normalized : value;
-
-              if (!mappedName && !value.startsWith("#")) {
-                displayName =
-                  value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
-                colorHex = value;
-              }
+              const parsed = parseColorValue(value);
 
               return (
                 <p key={`color-${i}`} className="mb-1">
                   <strong>{columnName}:</strong>{" "}
-                  <span className="font-bold" style={{ color: colorHex }}>
-                    {displayName}
+                  <span
+                    className="font-bold"
+                    style={{ color: parsed?.colorHex }}
+                  >
+                    {parsed?.displayName ?? value}
                   </span>
                 </p>
               );
