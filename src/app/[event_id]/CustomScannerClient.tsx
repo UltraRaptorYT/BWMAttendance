@@ -1,10 +1,14 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import supabase from "@/lib/supabase";
 import { notFound } from "next/navigation";
-import { EventData } from "@/types";
+import {
+  type EventData,
+  type TrackerField,
+  type TrackerConfigType,
+} from "@/types";
 import {
   Scanner as ScannerComp,
   centerText,
@@ -26,10 +30,21 @@ export default function CustomScannerPage() {
   const [eventStatus, setEventStatus] = useState<
     "loading" | "found" | "not-found"
   >("loading");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [trackerAnswers, setTrackerAnswers] = useState<Record<string, any>>({});
+  const trackerConfig =
+    (eventData?.tracker_config as TrackerConfigType | null) ?? null;
+  const [lastScannedCode, setLastScannedCode] = useState<string | null>(null);
   const [scannedUser, setScannedUser] = useState<Record<string, string> | null>(
     null,
   );
   const [isProcessing, setIsProcessing] = useState(false);
+  const processingRef = useRef(false);
+  const lastCodeRef = useRef<string | null>(null);
+  const lastScanAtRef = useRef<number>(0);
+
+  const trackerEnabled =
+    !!trackerConfig?.enabled && (trackerConfig?.fields?.length ?? 0) > 0;
 
   // --- Camera state ---
   const [cameras, setCameras] = useState<CameraDevice[]>([]);
@@ -145,9 +160,50 @@ export default function CustomScannerPage() {
     }
   };
 
+  async function submitTrackerAnswer(fieldKey: string, fieldValue: boolean) {
+    if (!eventData) return;
+    if (!lastScannedCode) {
+      toast.error("No scanned code found.");
+      return;
+    }
+
+    // Update local UI immediately
+    setTrackerAnswers((prev) => ({ ...prev, [fieldKey]: fieldValue }));
+
+    // Write to Google Sheet (UPSERT)
+    try {
+      const res = await fetch("/api/newScan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          SHEET_ID: extractSheetId(eventData.sheet_link || ""),
+          SHEET_NAME: eventData.attendance_name || "ATTENDANCE",
+          code: lastScannedCode,
+          code_column: eventData.code_column || "Code",
+          tracker_only: true,
+          updates: { [fieldKey]: fieldValue ? "Yes" : "No" },
+        }),
+      });
+
+      const out = await res.json();
+      if (!res.ok) throw new Error(out?.error || "Sheet update failed");
+
+      toast.success(`${fieldKey}: ${fieldValue ? "Yes" : "No"} saved`);
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to write tracker to sheet.");
+    }
+  }
+
   const scanToSheet = useCallback(
     async (value: string) => {
       if (isProcessing || !eventData) return;
+
+      // clear previous UI immediately
+      setScannedUser(null);
+      setTrackerAnswers({});
+      setLastScannedCode(value);
+
       setIsProcessing(true);
 
       try {
@@ -160,18 +216,14 @@ export default function CustomScannerPage() {
             SHEET_ID: extractSheetId(eventData.sheet_link || ""),
             SHEET_NAME: eventData.attendance_name || "ATTENDANCE",
             code: value,
+            code_column: eventData.code_column || "Code",
           }),
         });
 
         const result = await scanRes.json();
+        if (!scanRes.ok) throw new Error(result?.error || "Scan API failed");
 
-        if (!scanRes.ok) throw new Error("Scan API failed");
-
-        if (userRes) {
-          setScannedUser(userRes);
-        } else {
-          setScannedUser(null);
-        }
+        setScannedUser(userRes ?? null);
 
         if (!result.success && result.duplicate) {
           toast.warning(`⚠️ Already scanned: ${value}`);
@@ -181,6 +233,7 @@ export default function CustomScannerPage() {
       } catch (err) {
         console.error(err);
         toast.error("Scan failed.");
+        setLastScannedCode(null);
       } finally {
         setIsProcessing(false);
       }
@@ -188,17 +241,31 @@ export default function CustomScannerPage() {
     [eventData, isProcessing],
   );
 
+  useEffect(() => {
+    if (scannedUser) {
+      const timeout = setTimeout(() => {
+        setScannedUser(null);
+        setLastScannedCode(null);
+        setTrackerAnswers({});
+      }, 10000);
+      return () => clearTimeout(timeout);
+    }
+  }, [scannedUser]);
+
   const handleScan = useCallback(
     (detectedCodes: IDetectedBarcode[]) => {
       const code = detectedCodes[0]?.rawValue;
-      if (!code || isProcessing) return;
+      if (!code) return;
+
       if (code.split("|").slice(-1)[0] != event_id) {
         toast.error("Invalid QR Code");
         return;
       }
+
+      // scanToSheet itself has a hard lock now
       scanToSheet(code);
     },
-    [scanToSheet, isProcessing, event_id],
+    [scanToSheet, event_id],
   );
 
   const handleError = useCallback((error: unknown) => {
@@ -210,13 +277,6 @@ export default function CustomScannerPage() {
       toast.error(`Unknown scanner error: ${error}`);
     }
   }, []);
-
-  useEffect(() => {
-    if (scannedUser) {
-      const timeout = setTimeout(() => setScannedUser(null), 10000);
-      return () => clearTimeout(timeout);
-    }
-  }, [scannedUser]);
 
   if (eventStatus === "loading") {
     return (
@@ -334,7 +394,43 @@ export default function CustomScannerPage() {
             ⏳ Processing scan...
           </div>
         )}
-        <div className="bg-white shadow-md rounded-lg p-4 w-full max-w-md text-lg">
+        <div className="bg-white shadow-md rounded-lg p-4 w-full max-w-md text-lg mx-auto">
+          {!isProcessing &&
+            scannedUser &&
+            trackerEnabled && // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            trackerConfig!.fields!.map((f: any) => {
+              if (f.type === "boolean") {
+                const v = trackerAnswers?.[f.key]; // true/false/undefined
+                return (
+                  <div
+                    key={f.key}
+                    className="flex items-center justify-between gap-3 mb-3"
+                  >
+                    <div className="text-sm font-medium">{f.label}</div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant={v === true ? "default" : "outline"}
+                        onClick={() => submitTrackerAnswer(f.key, true)}
+                      >
+                        Yes
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant={v === false ? "default" : "outline"}
+                        onClick={() => submitTrackerAnswer(f.key, false)}
+                      >
+                        No
+                      </Button>
+                    </div>
+                  </div>
+                );
+              }
+
+              return null;
+            })}
           <h3 className="font-bold text-xl mb-2 text-center">
             {eventData?.event_name} User Info
           </h3>
