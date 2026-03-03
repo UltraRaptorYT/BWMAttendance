@@ -4,11 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
 import supabase from "@/lib/supabase";
 import { notFound } from "next/navigation";
-import {
-  type EventData,
-  type TrackerField,
-  type TrackerConfigType,
-} from "@/types";
+import { type EventData, type TrackerConfigType } from "@/types";
 import {
   Scanner as ScannerComp,
   centerText,
@@ -39,9 +35,6 @@ export default function CustomScannerPage() {
     null,
   );
   const [isProcessing, setIsProcessing] = useState(false);
-  const processingRef = useRef(false);
-  const lastCodeRef = useRef<string | null>(null);
-  const lastScanAtRef = useRef<number>(0);
 
   const trackerEnabled =
     !!trackerConfig?.enabled && (trackerConfig?.fields?.length ?? 0) > 0;
