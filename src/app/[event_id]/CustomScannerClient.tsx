@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import supabase from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import { type EventData, type TrackerConfigType } from "@/types";
