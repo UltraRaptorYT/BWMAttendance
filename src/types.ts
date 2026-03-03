@@ -9,4 +9,12 @@ export type EventData = {
   attendance_name: string;
   created_at: string;
   code_column: string;
+  tracker_config: TrackerConfigType;
+};
+
+export type TrackerField = { key: string; label: string; type: "boolean" };
+
+export type TrackerConfigType = {
+  enabled?: boolean;
+  fields?: TrackerField[];
 };
