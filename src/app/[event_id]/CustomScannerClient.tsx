@@ -322,7 +322,7 @@ export default function CustomScannerPage() {
   }
 
   return (
-    <div className="flex flex-col md:flex-row justify-center items-center fullHeight">
+    <div className="flex flex-col md:flex-row justify-center items-center fullHeight py-3">
       <div className="w-4/5 mx-auto aspect-square max-w-3xl relative">
         {/* Small switch camera button */}
         {cameras.length > 1 && (
