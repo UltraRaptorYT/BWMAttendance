@@ -11,40 +11,61 @@ export default function LoginForm() {
   const [error, setError] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams.get("redirect") || "/admin";
+  const requestedRedirect = searchParams.get("redirect");
+  const redirectPath =
+    requestedRedirect?.startsWith("/") && !requestedRedirect.startsWith("//")
+      ? requestedRedirect
+      : "/admin";
 
   async function handleSubmit(e: React.FormEvent) {
-    setIsProcessing(true);
     e.preventDefault();
+    setIsProcessing(true);
+    setError("");
 
-    const res = await fetch("/api/login", {
-      method: "POST",
-      body: JSON.stringify({ password }),
-      headers: { "Content-Type": "application/json" },
-    });
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        body: JSON.stringify({ password }),
+        headers: { "Content-Type": "application/json" },
+      });
 
-    setIsProcessing(false);
-    if (res.ok) {
-      router.push(redirectPath);
-    } else {
-      setError("Wrong password");
+      if (res.ok) {
+        router.push(redirectPath);
+        router.refresh();
+      } else {
+        const body = (await res.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        setError(body?.error || "Unable to sign in");
+      }
+    } catch {
+      setError("Unable to reach the server");
+    } finally {
+      setIsProcessing(false);
     }
   }
 
   return (
-    <div className="fullHeight p-4 flex items-center justify-center">
-      <div className="bg-white p-6 rounded shadow-md w-full max-w-sm">
-        <h1 className="text-xl font-semibold mb-4">Enter Password</h1>
+    <div className="dark fullHeight flex items-center justify-center bg-[#070b12] p-4 text-slate-100">
+      <div className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-black/30">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">
+          BWM Attendance
+        </p>
+        <h1 className="mb-1 text-xl font-semibold text-white">Admin sign in</h1>
+        <p className="mb-5 text-sm text-slate-500">
+          Enter the access password to manage events.
+        </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <PasswordInput
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
           />
           <Button className="w-full" type="submit" disabled={isProcessing}>
             {isProcessing ? "Checking..." : "Submit"}
           </Button>
         </form>
-        {error && <p className="text-red-500 mt-2">{error}</p>}
+        {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
       </div>
     </div>
   );

@@ -9,10 +9,12 @@ export function PasswordInput({
   value,
   onChange,
   placeholder = "Password",
+  required = false,
 }: {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
+  required?: boolean;
 }) {
   const [show, setShow] = useState(false);
 
@@ -23,6 +25,8 @@ export function PasswordInput({
         value={value}
         onChange={onChange}
         placeholder={placeholder}
+        autoComplete="current-password"
+        required={required}
         className="pr-10"
       />
       <Button

@@ -1,19 +1,36 @@
 import { NextResponse } from "next/server";
-import { SignJWT } from "jose";
-
-const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+import { createAdminToken } from "@/lib/admin-auth";
 
 export async function POST(req: Request) {
-  const { password } = await req.json();
+  const accessPassword = process.env.ACCESS_PASSWORD;
 
-  if (password !== process.env.ACCESS_PASSWORD) {
-    return NextResponse.json({ success: false }, { status: 401 });
+  if (!accessPassword) {
+    console.error("ACCESS_PASSWORD is not configured");
+    return NextResponse.json(
+      { success: false, error: "Server authentication is not configured" },
+      { status: 500 },
+    );
   }
 
-  const token = await new SignJWT({ role: "admin" })
-    .setProtectedHeader({ alg: "HS256" })
-    .setExpirationTime("1d")
-    .sign(secret);
+  let password: unknown;
+
+  try {
+    ({ password } = (await req.json()) as { password?: unknown });
+  } catch {
+    return NextResponse.json(
+      { success: false, error: "Invalid request body" },
+      { status: 400 },
+    );
+  }
+
+  if (typeof password !== "string" || password !== accessPassword) {
+    return NextResponse.json(
+      { success: false, error: "Incorrect password" },
+      { status: 401 },
+    );
+  }
+
+  const token = await createAdminToken();
 
   const res = NextResponse.json({ success: true });
 

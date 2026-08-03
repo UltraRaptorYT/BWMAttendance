@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
-
-const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+import { isValidAdminToken } from "@/lib/admin-auth";
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get("auth_token")?.value;
 
-  if (token) {
-    try {
-      await jwtVerify(token, secret);
-      return NextResponse.next();
-    } catch (err) {
-      console.warn("JWT verification failed:", err);
-    }
+  if (await isValidAdminToken(token)) {
+    return NextResponse.next();
   }
 
   const loginUrl = new URL("/login", req.url);
