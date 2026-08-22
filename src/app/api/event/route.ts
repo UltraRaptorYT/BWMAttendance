@@ -2,9 +2,37 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { isValidAdminToken } from "@/lib/admin-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import type { QrConfig } from "@/types";
 
 const EVENT_COLUMNS =
-  "id, event_name, sheet_link, RSVP, scanned_info, db_name, rsvp_name, attendance_name, code_column, tracker_config, created_at";
+  "id, event_name, sheet_link, RSVP, scanned_info, db_name, rsvp_name, attendance_name, code_column, tracker_config, qr_config, created_at";
+
+const QR_CONFIG_FIELDS = [
+  "primarySource",
+  "identifierSource",
+  "watermarkNameSource",
+  "watermarkDetailSource",
+  "watermarkSuffix",
+  "colorSource",
+  "colorMatchValue",
+  "colorMatchHex",
+  "colorFallbackHex",
+  "fixedQrColor",
+  "colorColumn",
+  "codeColumn",
+  "imageColumn",
+  "autoColumn",
+  "manualColumn",
+  "combinedColumn",
+  "attendanceCodeColumn",
+  "appBaseUrl",
+  "title",
+  "titleColor",
+  "titleFont",
+  "titleSize",
+  "watermarkColor",
+  "watermarkSize",
+] as const satisfies readonly (keyof QrConfig)[];
 
 type TrackerField = {
   key: string;
@@ -28,6 +56,7 @@ type EventRequest = {
   attendance_name?: unknown;
   code_column?: unknown;
   tracker_config?: unknown;
+  qr_config?: unknown;
 };
 
 type ValidEventInput = {
@@ -40,6 +69,7 @@ type ValidEventInput = {
   attendance_name: string;
   code_column: string;
   tracker_config: TrackerConfig | null;
+  qr_config?: QrConfig | null;
 };
 
 function requiredString(value: unknown) {
@@ -91,6 +121,24 @@ function parseTrackerConfig(value: unknown): TrackerConfig | null | undefined {
   return { enabled: config.enabled, fields };
 }
 
+function parseQrConfig(value: unknown): QrConfig | null | undefined {
+  if (value === null) return null;
+  if (typeof value !== "object" || Array.isArray(value)) return undefined;
+
+  const candidate = value as Record<string, unknown>;
+  const config: Partial<QrConfig> = {};
+
+  for (const field of QR_CONFIG_FIELDS) {
+    const fieldValue = candidate[field];
+    if (typeof fieldValue !== "string" || fieldValue.length > 2_000) {
+      return undefined;
+    }
+    config[field] = fieldValue;
+  }
+
+  return config as QrConfig;
+}
+
 function validateEvent(body: EventRequest) {
   const eventName = requiredString(body.event_name);
   const sheetLink = requiredString(body.sheet_link);
@@ -98,6 +146,8 @@ function validateEvent(body: EventRequest) {
   const attendanceName = requiredString(body.attendance_name) || "ATTENDANCE";
   const codeColumn = requiredString(body.code_column) || "Code";
   const trackerConfig = parseTrackerConfig(body.tracker_config);
+  const qrConfig =
+    body.qr_config === undefined ? undefined : parseQrConfig(body.qr_config);
 
   if (!eventName || !sheetLink || !dbName) {
     return {
@@ -122,6 +172,10 @@ function validateEvent(body: EventRequest) {
     return { error: "Tracker configuration is invalid" } as const;
   }
 
+  if (body.qr_config !== undefined && qrConfig === undefined) {
+    return { error: "QR configuration is invalid" } as const;
+  }
+
   const data: ValidEventInput = {
     event_name: eventName,
     sheet_link: sheetLink,
@@ -133,6 +187,10 @@ function validateEvent(body: EventRequest) {
     code_column: codeColumn,
     tracker_config: trackerConfig,
   };
+
+  if (body.qr_config !== undefined) {
+    data.qr_config = qrConfig ?? null;
+  }
 
   return { data } as const;
 }

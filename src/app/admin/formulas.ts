@@ -1,32 +1,9 @@
-export type FormulaSettings = {
-  primarySource: string;
-  identifierSource: string;
-  watermarkNameSource: string;
-  watermarkDetailSource: string;
-  watermarkSuffix: string;
-  colorSource: string;
-  colorMatchValue: string;
-  colorMatchHex: string;
-  colorFallbackHex: string;
-  fixedQrColor: string;
-  colourColumn: string;
-  codeColumn: string;
-  imageColumn: string;
-  autoColumn: string;
-  manualColumn: string;
-  combinedColumn: string;
-  attendanceCodeColumn: string;
-  appBaseUrl: string;
-  title: string;
-  titleColor: string;
-  titleFont: string;
-  titleSize: string;
-  watermarkColor: string;
-  watermarkSize: string;
-};
+import type { QrConfig } from "@/types";
+
+export type FormulaSettings = QrConfig;
 
 export type GeneratedFormula = {
-  id: "colour" | "code" | "image" | "auto" | "manual" | "combined";
+  id: "color" | "code" | "image" | "auto" | "manual" | "combined";
   title: string;
   cell: string;
   formula: string;
@@ -85,7 +62,7 @@ export function defaultFormulaSettings(
     colorMatchHex: "FA003F",
     colorFallbackHex: "000000",
     fixedQrColor: "000000",
-    colourColumn: headerColumn(headers, ["Colour", "Color"], "F"),
+    colorColumn: headerColumn(headers, ["Color"], "F"),
     codeColumn: headerColumn(headers, ["Code"], "G"),
     imageColumn: headerColumn(headers, ["ImageURL", "Image URL"], "H"),
     autoColumn: headerColumn(headers, ["AUTO"], "I"),
@@ -149,7 +126,7 @@ export function generateFormulas({
   );
   const colorSource = sourceColumn(headers, settings.colorSource);
 
-  const colourColumn = cleanColumn(settings.colourColumn, "F");
+  const colorColumn = cleanColumn(settings.colorColumn, "F");
   const codeColumn = cleanColumn(settings.codeColumn, "G");
   const imageColumn = cleanColumn(settings.imageColumn, "H");
   const autoColumn = cleanColumn(settings.autoColumn, "I");
@@ -164,11 +141,11 @@ export function generateFormulas({
 
   if (colorSource) {
     formulas.push({
-      id: "colour",
-      title: "Colour mapping",
-      cell: `${colourColumn}1`,
-      description: `Maps ${settings.colorSource} to QR colours. Change the match and fallback colours above as needed.`,
-      formula: `={"Colour";ARRAYFORMULA(IF(${colorSource}2:${colorSource}="","",IF(${colorSource}2:${colorSource}="${sheetText(settings.colorMatchValue)}","${cleanHex(settings.colorMatchHex, "FA003F")}","${cleanHex(settings.colorFallbackHex, "000000")}")))}`,
+      id: "color",
+      title: "Color mapping",
+      cell: `${colorColumn}1`,
+      description: `Maps ${settings.colorSource} to QR colors. Change the match and fallback colors above as needed.`,
+      formula: `={"Color";ARRAYFORMULA(IF(${colorSource}2:${colorSource}="","",IF(${colorSource}2:${colorSource}="${sheetText(settings.colorMatchValue)}","${cleanHex(settings.colorMatchHex, "FA003F")}","${cleanHex(settings.colorFallbackHex, "000000")}")))}`,
     });
   }
 
@@ -186,7 +163,7 @@ export function generateFormulas({
   if (watermarkName) {
     const baseUrl = settings.appBaseUrl.replace(/\/$/, "");
     const colorExpression = colorSource
-      ? `${colourColumn}2:${colourColumn}`
+      ? `${colorColumn}2:${colorColumn}`
       : `"${cleanHex(settings.fixedQrColor, "000000")}"`;
     const detailExpression = watermarkDetail
       ? `&"%20("&ENCODEURL(${watermarkDetail}2:${watermarkDetail})&"%20${sheetText(settings.watermarkSuffix)})"`
@@ -206,7 +183,7 @@ export function generateFormulas({
       title: "QR image URL",
       cell: `${imageColumn}1`,
       description:
-        "Creates the QR image link with an optional colour, attendee watermark, and event title.",
+        "Creates the QR image link with an optional color, attendee watermark, and event title.",
       formula: `={"ImageURL";ARRAYFORMULA(IF(${codeColumn}2:${codeColumn}="","",HYPERLINK("${sheetText(baseUrl)}/api/qrcode?data="&ENCODEURL(${codeColumn}2:${codeColumn})&"&color="&${colorExpression}&"&wm="&ENCODEURL(${watermarkName}2:${watermarkName})${detailExpression}&"${staticParams}")))}`,
     });
   }

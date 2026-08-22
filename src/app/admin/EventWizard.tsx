@@ -140,7 +140,7 @@ export default function EventWizard({
     getInitialTrackerFields(event),
   );
   const [formulaSettings, setFormulaSettings] = useState<FormulaSettings>(
-    defaultFormulaSettings([], event?.event_name ?? ""),
+    event?.qr_config ?? defaultFormulaSettings([], event?.event_name ?? ""),
   );
   const [savedEvent, setSavedEvent] = useState<EventData | null>(event ?? null);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -193,7 +193,9 @@ export default function EventWizard({
     setSelectedHeaders(
       existingSelection.length > 0 ? existingSelection : sensibleDefaults,
     );
-    setFormulaSettings(defaultFormulaSettings(nextHeaders, form.event_name));
+    if (!savedEvent?.qr_config) {
+      setFormulaSettings(defaultFormulaSettings(nextHeaders, form.event_name));
+    }
   }
 
   async function connectSheet() {
@@ -260,7 +262,9 @@ export default function EventWizard({
               )
               .slice(0, 3),
       );
-      setFormulaSettings(defaultFormulaSettings(nextHeaders, form.event_name));
+      if (!savedEvent?.qr_config) {
+        setFormulaSettings(defaultFormulaSettings(nextHeaders, form.event_name));
+      }
       setStep(2);
       toast.success(`Connected to ${result.spreadsheet_title}`);
     } catch (error) {
@@ -332,21 +336,11 @@ export default function EventWizard({
     setStep(3);
   }
 
-  async function saveEvent(eventSubmit: FormEvent) {
-    eventSubmit.preventDefault();
-
-    if (
-      !formulaSettings.primarySource ||
-      !formulaSettings.identifierSource ||
-      !formulaSettings.watermarkNameSource
-    ) {
-      toast.error("Choose the code and watermark source columns");
-      return;
-    }
+  async function persistEvent(includeQrConfig: boolean) {
+    const targetId = savedEvent?.id ?? event?.id;
 
     setIsSaving(true);
     try {
-      const targetId = savedEvent?.id ?? event?.id;
       const response = await fetch("/api/event", {
         method: targetId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -364,6 +358,7 @@ export default function EventWizard({
             trackerFields.length > 0
               ? { enabled: true, fields: trackerFields }
               : null,
+          ...(includeQrConfig ? { qr_config: formulaSettings } : {}),
         }),
       });
       const result = (await response.json().catch(() => null)) as {
@@ -373,7 +368,7 @@ export default function EventWizard({
 
       if (response.status === 401) {
         window.location.assign("/login?redirect=/admin");
-        return;
+        return null;
       }
       if (!response.ok || !result?.event) {
         throw new Error(result?.error || "Unable to save the event");
@@ -381,14 +376,47 @@ export default function EventWizard({
 
       setSavedEvent(result.event);
       onSaved(result.event);
-      setStep(4);
-      toast.success(targetId ? "Event updated" : "Event created");
+      return result.event;
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Unable to save the event",
       );
+      return null;
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function saveEventDetails() {
+    if (!canContinueEventStep()) return;
+    if (!savedEvent?.id && !event?.id) {
+      toast.error("Create the event through QR setup first");
+      return;
+    }
+
+    const updatedEvent = await persistEvent(false);
+    if (updatedEvent) {
+      toast.success("Step 2 changes saved");
+    }
+  }
+
+  async function saveEvent(eventSubmit: FormEvent) {
+    eventSubmit.preventDefault();
+
+    if (
+      !headers.includes(formulaSettings.primarySource) ||
+      !headers.includes(formulaSettings.identifierSource) ||
+      !headers.includes(formulaSettings.watermarkNameSource)
+    ) {
+      toast.error("Choose the code and watermark source columns");
+      return;
+    }
+
+    const targetId = savedEvent?.id ?? event?.id;
+    const updatedEvent = await persistEvent(true);
+    if (updatedEvent) {
+      setStep(4);
+      toast.success(targetId ? "Event updated" : "Event created");
     }
   }
 
@@ -666,9 +694,30 @@ export default function EventWizard({
               <Button type="button" variant="outline" onClick={() => setStep(1)}>
                 <ArrowLeft /> Back
               </Button>
-              <Button type="button" onClick={continueToQrSetup}>
-                Configure QR sheet <ArrowRight />
-              </Button>
+              <div className="flex flex-wrap justify-end gap-3">
+                {(savedEvent?.id || event?.id) && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={saveEventDetails}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <Loader2 className="animate-spin" />
+                    ) : (
+                      <Check />
+                    )}
+                    {isSaving ? "Saving..." : "Save Step 2"}
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  onClick={continueToQrSetup}
+                  disabled={isSaving}
+                >
+                  Configure QR sheet <ArrowRight />
+                </Button>
+              </div>
             </div>
           </section>
         )}
@@ -739,7 +788,7 @@ export default function EventWizard({
               )}
               <HeaderSelect
                 id="color-source"
-                label="Zone / colour source (optional)"
+                label="Zone / color source (optional)"
                 headers={headers}
                 value={formulaSettings.colorSource}
                 allowNone
@@ -755,7 +804,7 @@ export default function EventWizard({
                   onChange={(value) => updateFormula("colorMatchValue", value)}
                 />
                 <SmallInput
-                  label="Use QR colour"
+                  label="Use QR color"
                   value={formulaSettings.colorMatchHex}
                   onChange={(value) => updateFormula("colorMatchHex", value)}
                 />
@@ -768,7 +817,7 @@ export default function EventWizard({
             ) : (
               <div className="mt-6 max-w-xs">
                 <SmallInput
-                  label="Fixed QR colour"
+                  label="Fixed QR color"
                   value={formulaSettings.fixedQrColor}
                   onChange={(value) => updateFormula("fixedQrColor", value)}
                 />
@@ -794,7 +843,7 @@ export default function EventWizard({
                   onChange={(value) => updateFormula("titleSize", value)}
                 />
                 <SmallInput
-                  label="Title colour"
+                  label="Title color"
                   value={formulaSettings.titleColor}
                   onChange={(value) => updateFormula("titleColor", value)}
                 />
@@ -804,7 +853,7 @@ export default function EventWizard({
                   onChange={(value) => updateFormula("watermarkSize", value)}
                 />
                 <SmallInput
-                  label="Watermark colour"
+                  label="Watermark color"
                   value={formulaSettings.watermarkColor}
                   onChange={(value) => updateFormula("watermarkColor", value)}
                 />
@@ -822,7 +871,7 @@ export default function EventWizard({
               <div className="mt-4 grid gap-4 grid-cols-2 sm:grid-cols-4">
                 {(
                   [
-                    ["Colour", "colourColumn"],
+                    ["Color", "colorColumn"],
                     ["Code", "codeColumn"],
                     ["ImageURL", "imageColumn"],
                     ["AUTO", "autoColumn"],
